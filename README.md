@@ -46,5 +46,5 @@ User account: neo4j/password
 Reading manual:
 https://neo4j.com/docs/developer-manual/3.2/introduction/
 
-
 conda create --name graph_db python=3.6
+pip install neo4j
