@@ -38,9 +38,6 @@ https://neo4j.com/download-thanks-desktop/?edition=desktop&flavour=unix&release=
 #### Open in browser:
 http://127.0.0.1:7474/browser/
 
-# Use default password: neo4j
-# Change the password
-
 #### Install python neo4j
 ```conda create --name graph_db python=3.6``` 
 
