@@ -1,12 +1,39 @@
-from neo4j import GraphDatabase
+from py2neo import Graph, Node, Relationship
+import argparse
 
+class ToolGraphDatabase:
 
-uri = "bolt://localhost:7687"
-driver = GraphDatabase.driver(uri, auth=("neo4j", "password"))
+    @classmethod
+    def __init__(self, url, username, password):
+        """ Init method. """
+        self.graph = Graph(url, user=username, password=password)
 
-def run_query(tx, name):
-    for record in tx.run("MATCH (people:Person {name: {name}}) RETURN people.name LIMIT 10", name=name):
-        print(record["people.name"])
+    @classmethod
+    def create_records(self):
+        transaction = self.graph.begin()
+        node_a = Node("Person", name="Alice", place="Sweden")
+        transaction.create(node_a)
+        node_b = Node("Person", name="Bob", place="Sweden")
+        relation = Relationship(node_a, "KNOWS", node_b)
+        transaction.create(relation)
+        transaction.commit()
+        
+    @classmethod
+    def fetch_records(self):
+        fetch = self.graph.run("MATCH (a:Person {place: {place}} ) RETURN a.name, a.place", place="Sweden").data()
+        print(fetch)
 
-with driver.session() as session:
-    session.read_transaction(run_query, "Tom Hanks")
+  
+if __name__ == "__main__":
+
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("-url", "--url", required=True, help="Neo4j server")
+    arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
+    arg_parser.add_argument("-pass", "--password", required=True, help="Password")
+    args = vars(arg_parser.parse_args())
+    url = args["url"]
+    username = args["user_name"]
+    password = args["password"]
+    graph_db = ToolGraphDatabase(url, username, password)
+    #graph_db.create_records()
+    graph_db.fetch_records()

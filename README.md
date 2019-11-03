@@ -10,14 +10,12 @@
 ### Steps for installing Neo4j:
 
 #### Install java
-
 1. ```sudo apt install default-jre```
 
 #### Check Java's version
 - ```java --version```
 
 #### Install Neo4j
-
 2. ```wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -```
 3. ```echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee -a /etc/apt/sources.list.d/neo4j.list```
 4. ```sudo apt-get update```
@@ -34,9 +32,9 @@
 - http://127.0.0.1:7474/browser/
 
 #### Install python neo4j
-- ```conda create --name graph_db python=3.6``` 
-- ```pip install neo4j```
-
+- ```conda create --name graph_db python=3.6```
+- ```pip install neo4j``` (optional)
+- ```pip install py2neo```
 
 #### More details:
 - https://dzone.com/articles/installing-neo4j-on-ubuntu-1604
