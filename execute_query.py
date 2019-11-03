@@ -3,12 +3,10 @@ import argparse
 
 class ToolGraphDatabase:
 
-    @classmethod
     def __init__(self, url, username, password):
         """ Init method. """
         self.graph = Graph(url, user=username, password=password)
 
-    @classmethod
     def create_records(self):
         transaction = self.graph.begin()
         node_a = Node("Person", name="Alice", place="Sweden")
@@ -17,8 +15,7 @@ class ToolGraphDatabase:
         relation = Relationship(node_a, "KNOWS", node_b)
         transaction.create(relation)
         transaction.commit()
-        
-    @classmethod
+
     def fetch_records(self):
         fetch = self.graph.run("MATCH (a:Person {place: {place}} ) RETURN a.name, a.place", place="Sweden").data()
         print(fetch)
