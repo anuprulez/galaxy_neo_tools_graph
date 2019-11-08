@@ -17,7 +17,7 @@ class ToolGraphDatabase:
         transaction.commit()
 
     def fetch_records(self):
-        fetch = self.graph.run("MATCH (a:Person {place: {place}} ) RETURN a.name, a.place", place="Sweden").data()
+        fetch = self.graph.run("MATCH (a:Person {place: {place}}) RETURN a.name, a.place", place="Sweden").data()
         print(fetch)
 
   
