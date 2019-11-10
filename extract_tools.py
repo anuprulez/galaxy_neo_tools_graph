@@ -8,38 +8,34 @@ class ToolInfo:
     def __init__(self, path_all_tools):
         """ Init method. """
         self.path_all_tools = path_all_tools
+        self.GALAXY_URL = "https://usegalaxy.eu/api/tools/"
         
     def read_tools(self):
         """
-        Iterate over all tools
+        Iterate over all tools and collect tool ids
         """
         all_tools = list()
         tool_ids = list()
-        tool_sections = list()
+        # read json file containing all tools
         with open(self.path_all_tools, 'r') as f_tools:
             all_tools = json.loads(f_tools.read())
         for item in all_tools:
             if 'model_class' in item:
-                tool_sections.append(item['model_class'])
-                print()
                 if "elems" in item:
                     tool_section = item["elems"]
                     for tool in tool_section:
-                        print(tool)
-                        print()
-                print("-----------------------")
-        print(len(tool_sections))
+                        if "model_class" in tool and tool["model_class"] == "Tool":
+                            tool_ids.append(tool['id'])
+        assert len(tool_ids) > 0
+        return tool_ids
 
 
-    def fetch_tool(self, url):
+    def fetch_tool(self, tool_ids):
         """
         Download the model from remote server
         """
-        local_dir = os.path.join(os.getcwd(), 'tools.json')
-        # read model from remote
-        model_binary = requests.get(model_url)
-        # save model to a local directory
-        with open(local_dir, 'wb') as model_file:
-            model_file.write(model_binary.content)
-            return local_dir
-        print(fetch)
+        for t_id in tool_ids:
+            t_url = self.GALAXY_URL + t_id + "?io_details=True"
+            tool_info = json.loads(requests.get(t_url).text)
+            print(tool_info)
+            print()

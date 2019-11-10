@@ -32,6 +32,12 @@ if __name__ == "__main__":
     arg_parser.add_argument("-pass", "--password", required=True, help="Password")
     arg_parser.add_argument("-tf", "--tools_file", required=True, help="Tools file")
     args = vars(arg_parser.parse_args())
+    # extract information for tools
+    tools = extract_tools.ToolInfo(args["tools_file"])
+    tool_ids = tools.read_tools()
+    tools.fetch_tool(tool_ids)
+    
+    
     '''url = args["url"]
     username = args["user_name"]
     password = args["password"]
@@ -39,5 +45,4 @@ if __name__ == "__main__":
     #graph_db.create_records()
     graph_db.fetch_records()'''
     
-    tools = extract_tools.ToolInfo(args["tools_file"])
-    tools.read_tools()
+    
