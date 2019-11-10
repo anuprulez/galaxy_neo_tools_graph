@@ -1,6 +1,9 @@
 from py2neo import Graph, Node, Relationship
 import argparse
 
+import extract_tools
+
+
 class ToolGraphDatabase:
 
     def __init__(self, url, username, password):
@@ -27,10 +30,14 @@ if __name__ == "__main__":
     arg_parser.add_argument("-url", "--url", required=True, help="Neo4j server")
     arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
     arg_parser.add_argument("-pass", "--password", required=True, help="Password")
+    arg_parser.add_argument("-tf", "--tools_file", required=True, help="Tools file")
     args = vars(arg_parser.parse_args())
-    url = args["url"]
+    '''url = args["url"]
     username = args["user_name"]
     password = args["password"]
     graph_db = ToolGraphDatabase(url, username, password)
     #graph_db.create_records()
-    graph_db.fetch_records()
+    graph_db.fetch_records()'''
+    
+    tools = extract_tools.ToolInfo(args["tools_file"])
+    tools.read_tools()
