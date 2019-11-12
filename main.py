@@ -23,7 +23,7 @@ class ToolGraphDatabase:
         fetch = self.graph.run("MATCH (a:Person {place: {place}}) RETURN a.name, a.place", place="Sweden").data()
         print(fetch)
 
-  
+
 if __name__ == "__main__":
 
     arg_parser = argparse.ArgumentParser()
@@ -36,13 +36,11 @@ if __name__ == "__main__":
     tools = extract_tools.ToolInfo(args["tools_file"])
     tool_ids = tools.read_tools()
     tools.fetch_tool(tool_ids)
-    
-    
+
+
     '''url = args["url"]
     username = args["user_name"]
     password = args["password"]
     graph_db = ToolGraphDatabase(url, username, password)
     #graph_db.create_records()
     graph_db.fetch_records()'''
-    
-    
