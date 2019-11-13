@@ -67,7 +67,7 @@ class WorkflowGraphDatabase:
         print("Fetching records...")
         print()
         s_time = time.time()
-        i_name = "Cut1"
+        i_name = "cat1"
         o_name = "bamCoverage_deepTools"
         get_all_nodes_query = "MATCH (n) RETURN n"
         delete_all_nodes_query = "MATCH (n) DETACH DELETE n RETURN n"
@@ -76,10 +76,11 @@ class WorkflowGraphDatabase:
         # get the shortest path between two nodes having certain minimum length 
         query3 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p"
         # get all paths/relations
-        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 20"
+        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 5"
         # get next tool for any tool
         query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..3] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools LIMIT 20"
-        fetch = self.graph.run(query5, name_a=i_name).data()
+        #fetch = self.graph.run(query5, name_a=i_name).data()
+        fetch = self.graph.run(query4, name_a=i_name, name_b=o_name).data()
         for path in fetch:
             print(path)
             print()
