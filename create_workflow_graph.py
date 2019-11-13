@@ -16,7 +16,7 @@ class WorkflowGraphDatabase:
         self.tool_output_relation_name = "OUTPUT"
         self.tool_input_relation_name = "INPUT"
         self.input_output_relation_name = "COMPATIBLE"
-        
+
     def read_tool_connections(self, file_path):
         with open(file_path, 'rt') as workflow_connections_file:
             df_workflow_connections = pd.read_csv(workflow_connections_file, sep="\t")
@@ -57,7 +57,12 @@ class WorkflowGraphDatabase:
     def fetch_records(self):
         i_name = "cat1"
         o_name = "barchart_gnuplot"
-        fetch = self.graph.run("MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b", name_a=i_name, name_b=o_name).data()
+        get_all_nodes_query = "MATCH (n) RETURN n"
+        delete_all_nodes_query = "MATCH (n) DETACH DELETE n"
+        query1 = "MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b"
+        query2 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) RETURN p"
+        query3 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p"
+        fetch = self.graph.run(query3, name_a=i_name, name_b=o_name).data()
         print(fetch)
 
 
@@ -67,13 +72,18 @@ if __name__ == "__main__":
     arg_parser.add_argument("-url", "--url", required=True, help="Neo4j server")
     arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
     arg_parser.add_argument("-pass", "--password", required=True, help="Password")
+    arg_parser.add_argument("-cd", "--create_database", required=True, help="Create a new database or not")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
     password = args["password"]
-    # extract information for tools
+    create_db = args["create_database"]
+    # connect to neo4j database
     graph_db = WorkflowGraphDatabase(url, username, password)
-    #graph_db.read_tool_connections(args["workflow_file"])
+    # create a database
+    if create_db == "true":
+        graph_db.read_tool_connections(args["workflow_file"])
+    # run queries against database
     graph_db.fetch_records()
 
