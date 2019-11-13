@@ -62,13 +62,13 @@ class WorkflowGraphDatabase:
         
     def create_index(self):
         self.graph.schema.create_index("Tool", "name")
-        #print()
 
     def fetch_records(self):
         print("Fetching records...")
+        print()
         s_time = time.time()
-        i_name = "cat1"
-        o_name = "barchart_gnuplot"
+        i_name = "Cut1"
+        o_name = "bamCoverage_deepTools"
         get_all_nodes_query = "MATCH (n) RETURN n"
         delete_all_nodes_query = "MATCH (n) DETACH DELETE n RETURN n"
         query1 = "MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b"
@@ -76,10 +76,13 @@ class WorkflowGraphDatabase:
         # get the shortest path between two nodes having certain minimum length 
         query3 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p"
         # get all paths/relations
-        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*..] -> (b:Tool {name: {name_b}}) RETURN r"
-        fetch = self.graph.run(query4, name_a=i_name, name_b=o_name).data()
+        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 20"
+        # get next tool for any tool
+        query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..3] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools LIMIT 20"
+        fetch = self.graph.run(query5, name_a=i_name).data()
         for path in fetch:
             print(path)
+            print()
         e_time = time.time()
         print("Time elapsed in fetching records: %d seconds" % int(e_time - s_time))
 
@@ -105,6 +108,6 @@ if __name__ == "__main__":
         n = graph_db.graph.delete_all()
         assert n == None
         graph_db.read_tool_connections(workflow_file)
-    graph_db.create_index()
+        graph_db.create_index()
     # run queries against database
     graph_db.fetch_records()
