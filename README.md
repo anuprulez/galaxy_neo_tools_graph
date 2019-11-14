@@ -37,6 +37,9 @@
 - ```pip install py2neo```
 - ```conda install requests```
 
+#### Copy data file
+-  ```sudo cp <csv file path> /var/lib/neo4j/import/```
+
 #### More details:
 - https://dzone.com/articles/installing-neo4j-on-ubuntu-1604
 - https://medium.com/@Jessicawlm/installing-neo4j-on-ubuntu-14-04-step-by-step-guide-ed943ec16c56
