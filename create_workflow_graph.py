@@ -3,7 +3,6 @@ import argparse
 
 import time
 import extract_tools
-import csv
 import pandas as pd
 
 
@@ -12,11 +11,14 @@ class WorkflowGraphDatabase:
     def __init__(self, url, username, password):
         """ Init method. """
         self.graph = Graph(url, user=username, password=password)
-        self.tool_node_name = "Tool"
-        self.format_id_node_name = "Format"
-        self.tool_output_relation_name = "OUTPUT"
-        self.tool_input_relation_name = "INPUT"
-        self.input_output_relation_name = "COMPATIBLE"
+        self.tool_node = "Tool"
+        self.version_node = "Version"
+        self.format_node = "Format"
+        self.tool_version_relation = "TOOL_V"
+        self.version_output_format_relation = "V_OUTPUT_FORMAT"
+        self.output_input_format_relation = "COMPATIBLE"
+        self.input_format_version_relation = "INPUT_FORMAT_V"
+        self.version_tool_relation = "V_TOOL"
 
     def read_tool_connections(self, file_path):
         """
@@ -30,15 +32,20 @@ class WorkflowGraphDatabase:
             for index, row in df_workflow_connections.iterrows():
                 in_tool = row['in_tool']
                 out_tool = row['out_tool']
-                tool_input = row['tool_input']
-                tool_output = row['tool_output']
+                tool_input_format = row['tool_input']
+                tool_output_format = row['tool_output']
+                tool_input_v = row['in_tool_v']
+                tool_output_v = row['out_tool_v']
 
                 graph_components = {
                     "in_tool": in_tool,
                     "out_tool": out_tool,
                     "tool_input": tool_input,
-                    "tool_output": tool_output
+                    "tool_output": tool_output,
+                    "tool_input_v": tool_input_v,
+                    "tool_output_v": tool_output_v
                 }
+
                 self.create_graph_records(graph_components)
                 print("Record %d added" % (index + 1))
                 if (index % 100) == 0:
@@ -46,23 +53,6 @@ class WorkflowGraphDatabase:
                     transaction = self.graph.begin()
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
-        
-    def create_graph_records(self, graph_components):
-        """
-        Create nodes and relations for the database
-        """
-        tool_node_input = Node(self.tool_node_name, name=graph_components["in_tool"])
-        tool_node_output = Node(self.tool_node_name, name=graph_components["out_tool"])
-        format_node_input = Node(self.format_id_node_name, name=graph_components["tool_input"])
-        format_node_output = Node(self.format_id_node_name, name=graph_components["tool_output"])
-
-        relation_output = Relationship(tool_node_input, self.tool_output_relation_name, format_node_output)
-        relation_compatible = Relationship(format_node_output, self.input_output_relation_name, format_node_input)
-        relation_input = Relationship(format_node_input, self.tool_input_relation_name, tool_node_output)
-
-        self.graph.merge(relation_output, "Tool_Format", "name")
-        self.graph.merge(relation_compatible, "Compatible", "name")
-        self.graph.merge(relation_input, "Tool_Format", "name")
 
     def create_graph_bulk_merge(self, file_name):
         """
@@ -72,12 +62,17 @@ class WorkflowGraphDatabase:
         query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
         query += "WITH tool_connections "
         query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
-        query += "MERGE (out_tool: Tool {name: tool_connections.out_tool}) "
+        query += "MERGE (tool_input_v: Format {name: tool_connections.in_tool_v}) "
         query += "MERGE (tool_output: Format {name: tool_connections.tool_output}) "
         query += "MERGE (tool_input: Format {name: tool_connections.tool_input}) "
-        query += "MERGE (in_tool) -[:OUTPUT]-> (tool_output) "
+        query += "MERGE (tool_output_v: Format {name: tool_connections.out_tool_v}) "
+        query += "MERGE (out_tool: Tool {name: tool_connections.out_tool}) "
+        
+        query += "MERGE (in_tool) -[:TOOL_V]-> (tool_input_v) "
+        query += "MERGE (tool_input_v) -[:V_OUTPUT_FORMAT]-> (tool_output) "
         query += "MERGE (tool_output) -[:COMPATIBLE]-> (tool_input) "
-        query += "MERGE (tool_input) -[:INPUT]-> (out_tool) "
+        query += "MERGE (tool_input) -[:INPUT_FORMAT_V]-> (tool_output_v) "
+        query += "MERGE (tool_output_v) -[:V_TOOL]-> (out_tool) "
 
         print("Creating database in bulk...")
         s_time = time.time()
@@ -92,8 +87,8 @@ class WorkflowGraphDatabase:
         print("Fetching records...")
         print()
         s_time = time.time()
-        i_name = "toolshed.g2.bx.psu.edu/repos/pjbriggs/trimmomatic/trimmomatic/0.32.2"
-        o_name = "bowtie2" #toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/2.2.6.2
+        i_name = "cat1"
+        o_name = "addValue" #toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/2.2.6.2
         get_all_nodes_query = "MATCH (n) RETURN n"
         all_nodes = self.graph.run(get_all_nodes_query).data()
         #print(all_nodes)
@@ -107,8 +102,8 @@ class WorkflowGraphDatabase:
         query4 = "MATCH (a:Tool {name: {name_a}}) - [r*..10] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 10"
         fetch = self.graph.run(query4, name_a=i_name, name_b=o_name).data()
         # get next tool for any tool
-        query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..3] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools"
-        #fetch = self.graph.run(query5, name_a=i_name).data()
+        query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..10] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools"
+        fetch = self.graph.run(query5, name_a=i_name).data()
         for path in fetch:
             print(path)
             print()
