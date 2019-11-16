@@ -59,20 +59,72 @@ class WorkflowGraphDatabase:
         Create graph database with bulk import
         """
         # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'
-        query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
+        '''query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
         query += "WITH tool_connections "
         query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
-        query += "MERGE (tool_input_v: Format {name: tool_connections.in_tool_v}) "
-        query += "MERGE (tool_output: Format {name: tool_connections.tool_output}) "
-        query += "MERGE (tool_input: Format {name: tool_connections.tool_input}) "
-        query += "MERGE (tool_output_v: Format {name: tool_connections.out_tool_v}) "
+        query += "MERGE (tool_input_v: Format {name: tool_connections.in_tool_version}) "
+        query += "MERGE (tool_output: Format {name: tool_connections.in_tool_output}) "
+        query += "MERGE (tool_input: Format {name: tool_connections.out_tool_input}) "
+        query += "MERGE (tool_output_v: Format {name: tool_connections.out_tool_version}) "
         query += "MERGE (out_tool: Tool {name: tool_connections.out_tool}) "
         
         query += "MERGE (in_tool) -[:TOOL_V]-> (tool_input_v) "
         query += "MERGE (tool_input_v) -[:V_OUTPUT_FORMAT]-> (tool_output) "
         query += "MERGE (tool_output) -[:COMPATIBLE]-> (tool_input) "
         query += "MERGE (tool_input) -[:INPUT_FORMAT_V]-> (tool_output_v) "
-        query += "MERGE (tool_output_v) -[:V_TOOL]-> (out_tool) "
+        query += "MERGE (tool_output_v) -[:V_TOOL]-> (out_tool) "'''
+        
+        '''query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
+        query += "WITH tool_connections "
+        query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool) -[:TOOL_V] ->(tool_input_v: Format {name: tool_connections.in_tool_version}) "
+        query += "MERGE (in_tool) -[:TOOL_V] ->(tool_input_v) "
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output: Format {name: tool_connections.in_tool_output}) "
+        query += "MERGE (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) "
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] " \
+        "->(tool_input: Format {name: tool_connections.out_tool_input}) "
+        
+        query += "MERGE (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] ->(tool_input) "
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] ->(tool_input) " \
+        "-[:INPUT_FORMAT_V] ->(tool_output_v: Format {name: tool_connections.out_tool_version}) "
+
+        query += "MERGE (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] ->(tool_input) " \
+        "-[:INPUT_FORMAT_V] ->(tool_output_v) "
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] ->(tool_input) " \
+        "-[:INPUT_FORMAT_V] ->(tool_output_v) -[:V_TOOL] ->(out_tool: Tool {name: tool_connections.out_tool}) "
+        query += "MERGE (in_tool) -[:TOOL_V] ->(tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output) -[:COMPATIBLE] ->(tool_input) " \
+        "-[:INPUT_FORMAT_V] ->(tool_output_v) -[:V_TOOL] ->(out_tool)"'''
+        
+        query = "LOAD CSV WITH HEADERS FROM 'file:///corrected_gxadmin_workflow_connections_196.csv' AS tool_connections "
+        query += "WITH tool_connections "
+        query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
+
+        query += "WITH tool_connections "
+        query += "MATCH (in_tool: Tool {name: tool_connections.in_tool}) MERGE (in_tool) -[:TOOL_V] ->(tool_input_v: Format {name: tool_connections.in_tool_version}) "
+
+        query += "WITH tool_connections "
+        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(tool_input_v: Format {name: tool_connections.in_tool_version}) "
+        query += "MERGE (tool_input_v) -[:V_OUTPUT_FORMAT] ->(tool_output: Format {name: tool_connections.in_tool_output}) "
+
+        query += "WITH tool_connections "
+        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Format {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(tool_output: Format {name: tool_connections.in_tool_output}) "
+        query += "MERGE (tool_output) -[:COMPATIBLE] ->(tool_input: Format {name: tool_connections.out_tool_input}) " 
+
+        query += "WITH tool_connections "
+        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Format {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(tool_input: Format {name: tool_connections.out_tool_input}) "
+        query += "MERGE (tool_input) -[:INPUT_FORMAT_V] ->(tool_output_v: Format {name: tool_connections.out_tool_version}) "
+
+        #query += "WITH tool_connections "
+        #query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Format {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(Format {name: tool_connections.out_tool_input})-[:INPUT_FORMAT_V] ->(tool_output_v: Format {name: tool_connections.out_tool_version}) "
+        query += "MERGE (tool_output_v) -[:V_TOOL] ->(out_tool: Tool {name: tool_connections.out_tool}) "
+        
+        print(query)
+        
 
         print("Creating database in bulk...")
         s_time = time.time()
