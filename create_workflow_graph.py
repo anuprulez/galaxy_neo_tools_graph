@@ -20,40 +20,6 @@ class WorkflowGraphDatabase:
         self.input_format_version_relation = "INPUT_FORMAT_V"
         self.version_tool_relation = "V_TOOL"
 
-    def read_tool_connections(self, file_path):
-        """
-        Extract tool connections from tabular file
-        """
-        s_time = time.time()
-        with open(file_path, 'rt') as workflow_connections_file:
-            df_workflow_connections = pd.read_csv(workflow_connections_file, sep=",")
-            print("Creating new database")
-            transaction = self.graph.begin()
-            for index, row in df_workflow_connections.iterrows():
-                in_tool = row['in_tool']
-                out_tool = row['out_tool']
-                tool_input_format = row['tool_input']
-                tool_output_format = row['tool_output']
-                tool_input_v = row['in_tool_v']
-                tool_output_v = row['out_tool_v']
-
-                graph_components = {
-                    "in_tool": in_tool,
-                    "out_tool": out_tool,
-                    "tool_input": tool_input,
-                    "tool_output": tool_output,
-                    "tool_input_v": tool_input_v,
-                    "tool_output_v": tool_output_v
-                }
-
-                self.create_graph_records(graph_components)
-                print("Record %d added" % (index + 1))
-                if (index % 100) == 0:
-                    transaction.commit()
-                    transaction = self.graph.begin()
-        e_time = time.time()
-        print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
-
     def create_graph_bulk_merge(self, file_name):
         """
         Create graph database with bulk import
@@ -101,10 +67,9 @@ class WorkflowGraphDatabase:
         print()
         s_time = time.time()
         i_name = "trimmomatic"
-        o_name = "bowtie2" #toolshed.g2.bx.psu.edu/repos/devteam/bowtie2/bowtie2/2.2.6.2
+        o_name = "bowtie2"
         get_all_nodes_query = "MATCH (n) RETURN n"
         all_nodes = self.graph.run(get_all_nodes_query).data()
-        #print(all_nodes)
         print("Number of all nodes: %d" % len(all_nodes))
         print()
         query1 = "MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b"
