@@ -1,9 +1,9 @@
-from py2neo import Graph, Node, Relationship
 import argparse
-
+import os
 import time
-import extract_tools
-import pandas as pd
+
+
+from py2neo import Graph, Node, Relationship
 
 
 class WorkflowGraphDatabase:
@@ -11,10 +11,33 @@ class WorkflowGraphDatabase:
     def __init__(self, url, username, password):
         """ Init method. """
         self.graph = Graph(url, user=username, password=password)
+        self.components = {
+            'Nodes': {
+                'Tool': 'Tool',
+                'Version': 'Version',
+                'ToolOutput': 'ToolOutput',
+                'ToolInput': 'ToolInput',
+                'WorkflowConnection': 'WorkflowConnection',
+                'Workflow': 'Workflow',
+                'Datatype': 'Datatype',
+                'EDAMFormat': 'EDAMFormat',
+            },
+            'Relationships': {
+                'Tool_to_Version': 'IS_VERSION_OF',
+                'Version_to_ToolOutput': 'GENERATES_OUTPUT',
+                'Version_to_ToolInput': 'TAKES_INPUT',
+                'WorkflowConnection_to_ToolOutput': 'CONNECTS_OUTPUT',
+                'WorkflowConnection_to_ToolInput': 'TO_INPUT',
+                'Workflow_to_WorkflowConnection': 'DESCRIBES_CONNECTION',
+                'ToolOutput_to_Datatype': 'HAS_DATATYPE',
+                'ToolInput_to_Datatype': 'HAS_DATATYPE',
+                'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
+            }
+        }
         self.tool_node = "Tool"
         self.version_node = "Version"
         self.format_node = "Format"
-        self.tool_version_relation = "TOOL_V"
+        self.tool_version_relation = "IS_VERSION_OF"
         self.version_output_format_relation = "V_OUTPUT_FORMAT"
         self.output_input_format_relation = "COMPATIBLE"
         self.input_format_version_relation = "INPUT_FORMAT_V"
@@ -59,6 +82,104 @@ class WorkflowGraphDatabase:
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
+    def _build_load_io_data_from_csv(self, column_map, file_name):
+        """
+        Build query string for bulk import of Tools IO data.
+        """
+
+        if self.components['Nodes']['ToolInput'] in column_map:
+            io_node = 'ToolInput'
+        else:
+            io_node = 'ToolOutput'
+
+        tool = '{0}{{name:source.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            column_map[self.components['Nodes']['Tool']]
+        )
+        version = '{0}{{name:source.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            column_map[self.components['Nodes']['Version']]
+        )
+        dataset = '{0}{{name:source.{1}}}'.format(
+            self.components['Nodes'][io_node],
+            column_map[self.components['Nodes'][io_node]]
+        )
+        datatype = '{0}{{name:source.{1}}}'.format(
+            self.components['Nodes']['Datatype'],
+            column_map[self.components['Nodes']['Datatype']]
+        )
+        edam_format = '{0}{{id:source.{1}}}'.format(
+            self.components['Nodes']['EDAMFormat'],
+            column_map[self.components['Nodes']['EDAMFormat']]
+        )
+
+        query = (
+            "LOAD CSV "
+            "WITH HEADERS FROM 'file:///{fn}' AS source "
+            "WITH source "
+            "MERGE (t:{tool}) MERGE (dt:{datatype}) MERGE (fmt:{edam_format}) "
+            "WITH source, t, dt, fmt "
+            "MERGE (dt)-[:{dtfmt_rel}]->(fmt) "
+            "MERGE (t)<-[:{tv_rel}]-(v:{version}) "
+            "WITH source, v, dt "
+            "MERGE (v)-[:{vio_rel}]->(d:{dataset}) "
+            "WITH source, d, dt "
+            "MERGE (d)-[:{dt_rel}]->(dt) "
+        ).format(
+            fn=os.path.basename(file_name),
+            tool=tool,
+            version=version,
+            dataset=dataset,
+            datatype=datatype,
+            edam_format=edam_format,
+            tv_rel=self.components['Relationships']['Tool_to_Version'],
+            vio_rel=self.components['Relationships'][
+                'Version_to_{0}'.format(io_node)
+            ],
+            dt_rel=self.components['Relationships'][
+                '{0}_to_Datatype'.format(io_node)
+            ],
+            dtfmt_rel=self.components['Relationships']['Datatype_to_EDAMFormat']
+        )
+
+        return query
+
+    def load_io_data_from_csv(self, file_name, io_node_type):
+        """Bulk import Tools IO data into db.
+
+        Run with io_node_type="ToolInput" to upload tool input data,
+        with io_node_type="ToolOutput" to upload tool output data.
+
+        To make the import work, copy the csv file to the neo4j
+        # /import folder and pass the full path to the file via
+        file_name.
+        """
+
+        with open(file_name, 'r') as i:
+            # associate db Nodes with csv column names
+            column_map = dict(
+                zip(
+                    (
+                        self.components['Nodes']['Tool'],
+                        self.components['Nodes']['Version'],
+                        self.components['Nodes'][io_node_type],
+                        self.components['Nodes']['Datatype'],
+                        self.components['Nodes']['EDAMFormat']
+                    ),
+                    i.readline().strip().split(',')
+                )
+            )
+
+        # build the cypher query string
+        query = self._build_load_io_data_from_csv(column_map, file_name)
+        print(query)
+
+        print("Creating database in bulk...")
+        s_time = time.time()
+        self.graph.run(query)
+        e_time = time.time()
+        print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
+
     def create_index(self):
         self.graph.schema.create_index("Tool", "name")
 
@@ -90,7 +211,6 @@ class WorkflowGraphDatabase:
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-url", "--url", required=True, help="Neo4j server")
     arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
