@@ -48,7 +48,7 @@ class WorkflowGraphDatabase:
         Create graph database with bulk import
         """
         # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'        
-        query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
+        '''query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
         query += "WITH tool_connections "
         query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
 
@@ -74,11 +74,21 @@ class WorkflowGraphDatabase:
         query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(: Format {name: tool_connections.out_tool_input}) -[:INPUT_FORMAT_V] ->(tool_output_v: Version {name: tool_connections.out_tool_version}) "
         query += "MERGE (tool_output_v) -[:V_TOOL] ->(out_tool: Tool {name: tool_connections.out_tool}) "
         
-        print(query)
+        print(query)'''
+        
+        wf_query = "LOAD CSV WITH HEADERS FROM 'file:///corrected_gxadmin_workflow_connections_88551.csv' AS tc "
+        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool)<-[:IS_VERSION_OF]-(in_v: Version {name: tc.in_tool_version}) "
+        wf_query += "WITH tc, in_tool, in_v "
+        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool)<-[:IS_VERSION_OF]-(out_v:Version {name: tc.out_tool_version}) "
+        wf_query += "WITH tc, in_tool, in_v, out_tool, out_v "
+        wf_query += "MATCH (in_tool) <- [:IS_VERSION_OF] -(in_v) MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
+        wf_query += "WITH tc, out_tool, out_v "
+        wf_query += "MATCH (out_tool) <- [:IS_VERSION_OF] -(out_v) MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
+        wf_query += "MERGE (d_out) -[:WORKFLOW_CONNECTION] -> (d_in)"
 
         print("Creating database in bulk...")
         s_time = time.time()
-        self.graph.run(query)
+        self.graph.run(wf_query)
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
@@ -229,6 +239,9 @@ if __name__ == "__main__":
     if create_db == "true":
         n = graph_db.graph.delete_all()
         assert n == None
+
+        graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_iformats.csv", "ToolInput")
+        graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_oformats.csv", "ToolOutput")
         graph_db.create_graph_bulk_merge(workflow_file)
     # run queries against database
     graph_db.fetch_records()

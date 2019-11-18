@@ -24,3 +24,7 @@ WHERE workflow.id in (
     FROM stored_workflow
     LEFT JOIN workflow on stored_workflow.latest_workflow_id = workflow.id
 )
+
+MATCH (t:Tool)<-[:IS_VERSION_OF]-(v:Version)-[:GENERATES_OUTPUT]->(o:ToolOutput)-[:HAS_DATATYPE]->(d:Datatype{name:"vcf"}) WITH t,v,o,d MATCH (v)-[:TAKES_INPUT]->(i:ToolInput)-[:HAS_DATATYPE]->(d2:Datatype{name:"bam"}) RETURN DISTINCT t,v,o,d,i,d2
+
+MATCH (a:Tool { name: "trimmomatic"}), (b:Tool { name: "bowtie2"}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p
