@@ -1747,86 +1747,66 @@ flye,2.3.7,inputs,fastq,format_1930
 flye,2.3.7,inputs,fastq.gz,format_1930
 flye,2.3.7,inputs,fastqsanger.gz,format_1932
 flye,2.3.7,inputs,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fasta,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fastq,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|fwd_reads,fastqsanger.gz,None
+spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fasta,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fastq,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|rev_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fasta,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fastq,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|interleaved_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fasta,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fastq,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|merged_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fasta,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fastq,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,pacbio_reads,
-        fasta,None
+spades,3.12.0+galaxy1,libraries|files|file_type|unpaired_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,pacbio_reads,fasta,format_1929
 spades,3.12.0+galaxy1,pacbio_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,pacbio_reads,fastq,format_1930
 spades,3.12.0+galaxy1,pacbio_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,pacbio_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,pacbio_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,nanopore_reads,
-        fasta,None
+spades,3.12.0+galaxy1,pacbio_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,nanopore_reads,fasta,format_1929
 spades,3.12.0+galaxy1,nanopore_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,nanopore_reads,fastq,format_1930
 spades,3.12.0+galaxy1,nanopore_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,nanopore_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,nanopore_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,sanger_reads,
-        fasta,None
+spades,3.12.0+galaxy1,nanopore_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,sanger_reads,fasta,format_1929
 spades,3.12.0+galaxy1,sanger_reads,fasta.gz,format_1929
 spades,3.12.0+galaxy1,sanger_reads,fastq,format_1930
 spades,3.12.0+galaxy1,sanger_reads,fastq.gz,format_1930
 spades,3.12.0+galaxy1,sanger_reads,fastqsanger,format_1932
-spades,3.12.0+galaxy1,sanger_reads,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,trusted_contigs,
-        fasta,None
+spades,3.12.0+galaxy1,sanger_reads,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,trusted_contigs,fasta,format_1929
 spades,3.12.0+galaxy1,trusted_contigs,fasta.gz,format_1929
 spades,3.12.0+galaxy1,trusted_contigs,fastq,format_1930
 spades,3.12.0+galaxy1,trusted_contigs,fastq.gz,format_1930
 spades,3.12.0+galaxy1,trusted_contigs,fastqsanger,format_1932
-spades,3.12.0+galaxy1,trusted_contigs,fastqsanger.gz
-    ,None
-spades,3.12.0+galaxy1,untrusted_contigs,
-        fasta,None
+spades,3.12.0+galaxy1,trusted_contigs,fastqsanger.gz,format_1932
+spades,3.12.0+galaxy1,untrusted_contigs,fasta,format_1929
 spades,3.12.0+galaxy1,untrusted_contigs,fasta.gz,format_1929
 spades,3.12.0+galaxy1,untrusted_contigs,fastq,format_1930
 spades,3.12.0+galaxy1,untrusted_contigs,fastq.gz,format_1930
 spades,3.12.0+galaxy1,untrusted_contigs,fastqsanger,format_1932
-spades,3.12.0+galaxy1,untrusted_contigs,fastqsanger.gz
-    ,None
+spades,3.12.0+galaxy1,untrusted_contigs,fastqsanger.gz,format_1932
 velvetoptimiser,2.2.6,files|paired_type|input1,fastqsanger,format_1932
 velvetoptimiser,2.2.6,files|paired_type|input1,fasta,format_1929
 velvetoptimiser,2.2.6,files|paired_type|input1,bam,format_2572
@@ -2126,7 +2106,7 @@ gatk4_mutect2,4.1.4.0+galaxy0,optional|germline_resource,vcf,format_3016
 gatk4_mutect2,4.1.4.0+galaxy0,optional|germline_resource,vcf_bgzip,format_3016
 gatk4_mutect2,4.1.4.0+galaxy0,optional|panel_of_normals,vcf,format_3016
 gatk4_mutect2,4.1.4.0+galaxy0,optional|panel_of_normals,vcf_bgzip,format_3016
-gatk4_mutect2,4.1.4.0+galaxy0,optional|population_callset,,None
+gatk4_mutect2,4.1.4.0+galaxy0,optional|population_callset,None,None
 exomedepth,1.1.0,targetFile,bed,format_3003
 exomedepth,1.1.0,inputs|input,bam,format_2572
 freebayes,1.3.1,reference_source|batchmode|input_bams,bam,format_2572
@@ -3755,33 +3735,27 @@ ncbi_makeblastdb,0.3.3,input_file,fasta,format_1929
 ncbi_makeblastdb,0.3.3,input_file,fasta.gz,format_1929
 ncbi_makeblastdb,0.3.3,mask_data_file,maskinfo-asn1,format_1966
 ncbi_makeblastdb,0.3.3,mask_data_file,maskinfo-asn1-binary,format_1966
-kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,
-        fasta,None
+kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fasta,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fastq,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fasta.gz,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fasta.bz2,None
 kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fastq.gz,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fastq.bz2,format_1930
-kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fastqsanger
-    ,None
-kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,
-        fasta,None
+kraken2,2.0.8_beta+galaxy0,single_paired|forward_input,fastqsanger,format_1932
+kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fasta,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fastq,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fasta.gz,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fasta.bz2,None
 kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fastq.gz,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fastq.bz2,format_1930
-kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fastqsanger
-    ,None
-kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,
-        fasta,None
+kraken2,2.0.8_beta+galaxy0,single_paired|reverse_input,fastqsanger,format_1932
+kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fasta,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fastq,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fasta.gz,format_1929
 kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fasta.bz2,None
 kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fastq.gz,format_1930
 kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fastq.bz2,format_1930
-kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fastqsanger
-    ,None
+kraken2,2.0.8_beta+galaxy0,single_paired|input_sequences,fastqsanger,format_1932
 kraken,1.3.0,single_paired|forward_input,fasta,format_1929
 kraken,1.3.0,single_paired|forward_input,fastq,format_1930
 kraken,1.3.0,single_paired|reverse_input,fasta,format_1929
@@ -5060,10 +5034,10 @@ cardinal_preprocessing,1.12.1.3,infile,rdata,format_2333
 cardinal_preprocessing,1.12.1.3,infile,analyze75,format_2333
 cardinal_preprocessing,1.12.1.3,methods|methods_conditional|align_ref_type|mz_tabular,tabular,format_3475
 cardinal_preprocessing,1.12.1.3,methods|methods_conditional|align_ref_type|align_peaks_msidata,rdata,format_2333
-cardinal_preprocessing,1.12.1.3,methods|methods_conditional|align_ref_type|align_peaks_msidata,,None
+cardinal_preprocessing,1.12.1.3,methods|methods_conditional|align_ref_type|align_peaks_msidata,None,None
 cardinal_preprocessing,1.12.1.3,methods|methods_conditional|methods_for_reduction|ref_type|mz_tabular,tabular,format_3475
 cardinal_preprocessing,1.12.1.3,methods|methods_conditional|methods_for_reduction|ref_type|peaks_msidata,rdata,format_2333
-cardinal_preprocessing,1.12.1.3,methods|methods_conditional|methods_for_reduction|ref_type|peaks_msidata,,None
+cardinal_preprocessing,1.12.1.3,methods|methods_conditional|methods_for_reduction|ref_type|peaks_msidata,None,None
 dia_umpire_se,2.1.3.0,input,mzxml,format_3654
 dia_umpire_se,2.1.3.0,instrument|window|window_list|WindowListFile,tabular,format_3475
 custom_pro_db,1.22.0,genome_annotation|bamInput,bam,format_2572
