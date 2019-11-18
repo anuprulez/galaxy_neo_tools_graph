@@ -31,10 +31,14 @@
 #### Open in browser:
 - http://127.0.0.1:7474/browser/
 
-#### Install python neo4j
+#### Install requirements
 - ```conda create --name graph_db python=3.6```
 - ```pip install neo4j``` (optional)
 - ```pip install py2neo```
+- ```conda install requests```
+
+#### Copy data file
+-  ```sudo cp <csv file path> /var/lib/neo4j/import/```
 
 #### More details:
 - https://dzone.com/articles/installing-neo4j-on-ubuntu-1604
