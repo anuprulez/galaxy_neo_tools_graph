@@ -972,6 +972,23 @@ velvetg,1.0.0,unused_reads_fasta,fasta,format_1929
 velvetg,1.0.0,stats,tabular,format_3475
 velvetg,1.0.0,contigs,fasta,format_1929
 velveth,1.0.0,out_file1,velvet,format_2331
+bismark_bowtie2,0.22.1+galaxy2,report_file,txt,format_2330
+bismark_bowtie2,0.22.1+galaxy2,output_stdout,txt,format_2330
+bismark_bowtie2,0.22.1+galaxy2,output,qname_input_sorted.bam,format_2572
+bismark_bowtie2,0.22.1+galaxy2,output_suppressed_reads_l,fastq,format_1930
+bismark_bowtie2,0.22.1+galaxy2,output_suppressed_reads_r,fastq,format_1930
+bismark_bowtie2,0.22.1+galaxy2,output_unmapped_reads_l,fastq,format_1930
+bismark_bowtie2,0.22.1+galaxy2,output_unmapped_reads_r,fastq,format_1930
+bismark_deduplicate,0.22.1,output_bam,qname_sorted.bam,format_2572
+bismark_deduplicate,0.22.1,output_report,txt,format_2330
+bismark_deduplicate,0.22.1,log_report,txt,format_2330
+bismark_pretty_report,0.22.1,output_html_report,html,format_2331
+bismark_pretty_report,0.22.1,log_report,txt,format_2330
+bismark_methylation_extractor,0.22.1,output_splitting_report,tabular,format_3475
+bismark_methylation_extractor,0.22.1,output_mbias_report,txt,format_2330
+bismark_methylation_extractor,0.22.1,output_cytosine_report,txt,format_2330
+bismark_methylation_extractor,0.22.1,compressed_output,zip,format_2333
+bismark_methylation_extractor,0.22.1,log_report,txt,format_2330
 megablast_xml_parser,1.0.0,output1,tabular,format_3475
 megablast_wrapper,1.2.0,output1,tabular,format_3475
 lastz_paired_reads_wrapper,1.1.1,output1,sam,format_2573
@@ -1012,23 +1029,6 @@ hisat2,2.1.0+galaxy5,output_unaligned_reads_r,fastqsanger,format_1932
 hisat2,2.1.0+galaxy5,output_aligned_reads_r,fastqsanger,format_1932
 hisat2,2.1.0+galaxy5,summary_file,txt,format_2330
 hisat2,2.1.0+galaxy5,novel_splicesite_output,tabular,format_3475
-bismark_methylation_extractor,0.22.1,output_splitting_report,tabular,format_3475
-bismark_methylation_extractor,0.22.1,output_mbias_report,txt,format_2330
-bismark_methylation_extractor,0.22.1,output_cytosine_report,txt,format_2330
-bismark_methylation_extractor,0.22.1,compressed_output,zip,format_2333
-bismark_methylation_extractor,0.22.1,log_report,txt,format_2330
-bismark_deduplicate,0.22.1,output_bam,qname_sorted.bam,format_2572
-bismark_deduplicate,0.22.1,output_report,txt,format_2330
-bismark_deduplicate,0.22.1,log_report,txt,format_2330
-bismark_bowtie2,0.22.1+galaxy2,report_file,txt,format_2330
-bismark_bowtie2,0.22.1+galaxy2,output_stdout,txt,format_2330
-bismark_bowtie2,0.22.1+galaxy2,output,qname_input_sorted.bam,format_2572
-bismark_bowtie2,0.22.1+galaxy2,output_suppressed_reads_l,fastq,format_1930
-bismark_bowtie2,0.22.1+galaxy2,output_suppressed_reads_r,fastq,format_1930
-bismark_bowtie2,0.22.1+galaxy2,output_unmapped_reads_l,fastq,format_1930
-bismark_bowtie2,0.22.1+galaxy2,output_unmapped_reads_r,fastq,format_1930
-bismark_pretty_report,0.22.1,output_html_report,html,format_2331
-bismark_pretty_report,0.22.1,log_report,txt,format_2330
 graphmap_overlap,0.5.2,output,txt,format_2330
 graphmap_align,0.5.2,output,bam,format_2572
 bismark_bowtie,0.7.12,report_file,txt,format_2330
@@ -1615,7 +1615,7 @@ rbc_mirdeep2,2.0.0,html,html,format_2331
 rbc_mirdeep2,2.0.0,pred_acc,tabular,format_3475
 rbc_mirdeep2,2.0.0,bed_out,bed,format_3003
 rbc_mirdeep2,2.0.0,mrd_out,txt,format_2330
-rsem_prepare_reference,1.1.17,reference_file,rsem_ref,format_2331
+rsem_prepare_reference,1.1.17,reference_file,rsem_ref,None
 rsem_calculate_expression,1.1.17,gene_abundances,tabular,format_3475
 rsem_calculate_expression,1.1.17,isoform_abundances,tabular,format_3475
 rsem_calculate_expression,1.1.17,transcript_bam,bam,format_2572
@@ -1932,7 +1932,7 @@ t_coffee,11.0.8,clustalw_aln,clustalw,None
 t_coffee,11.0.8,dnd,nhx,format_1910
 t_coffee,11.0.8,fasta_aln,fasta,format_1929
 t_coffee,11.0.8,fasta_seq,fasta,format_1929
-t_coffee,11.0.8,msf_aln,msf,format_2330
+t_coffee,11.0.8,msf_aln,msf,None
 t_coffee,11.0.8,phylip,phyloxml,format_3159
 t_coffee,11.0.8,pir_aln,pir,format_2330
 t_coffee,11.0.8,pir_seq,pir,format_2330
@@ -2189,7 +2189,7 @@ EMBOSS: fuzztran39,5.0.0.1,out_file1,fuzztran,format_2330
 EMBOSS: tcode97,5.0.0.1,out_file1,table,format_2330
 EMBOSS: pepcoil68,5.0.0.1,out_file1,pepcoil,format_2330
 EMBOSS: helixturnhelix43,5.0.0.1,out_file1,motif,format_2330
-EMBOSS: iep45,5.0.0.1,out_file1,iep,None
+EMBOSS: iep45,5.0.0.1,out_file1,txt,format_2330
 EMBOSS: merger54,5.0.0.1,out_file1,fasta,format_1929
 EMBOSS: merger54,5.0.0.1,out_file2,simple,format_2330
 EMBOSS: equicktandem31,5.0.0.1,out_file1,table,format_2330
@@ -3470,7 +3470,7 @@ mass_spectrometry_imaging_filtering,1.10.0.6,QC_overview,pdf,format_3508
 msgfplus,0.5,output,mzid,format_3247
 msgfplus,0.5,tsvoutput,tabular,format_3475
 eden_protease_prediction,0.9,outfile_predict,tabular,format_3475
-eden_protease_prediction,0.9,outfile_fit,eden_model,format_2333
+eden_protease_prediction,0.9,outfile_fit,eden_model,None
 sqlite_to_tabular,2.0.0,query_results,tabular,format_3475
 bg_protein_properties,0.1.0,output,tabular,format_3475
 filter_tabular,2.0.0,output,tabular,format_3475
@@ -4545,7 +4545,7 @@ bedtools_overlapbed,2.27.1,output,data,format_1915
 bedtools_genomecoveragebed_bedgraph,2.19.0,output,bedgraph,format_3583
 bedtools_mergebedgraph,2.19.0,output,tabular,format_3475
 bedtools_genomecoveragebed_histogram,2.19.0,output,tabular,format_3475
-Extract genomic DNA 1,3.0.2,output,data,format_1915
+Extract genomic DNA 1,3.0.3,output,data,format_1915
 onto_tk_get_ancestor_terms,1.45.1,output,tabular,format_3475
 onto_tk_get_relationship_types,1.45.0,output,tabular,format_3475
 onto_tk_obo2rdf,1.45.0,output,rdf,format_3261
@@ -4651,3 +4651,4 @@ Fetch Taxonomic Ranks,1.1.0,out_file1,taxonomy,format_3475
 find_diag_hits,1.0.0,out_file1,tabular,format_3475
 gatk_count_covariates,0.0.5,output_recal,csv,format_3475
 gatk_count_covariates,0.0.5,output_log,txt,format_2330
+tag_pileup_frequency,1.0.1,output1,tabular,format_3475
