@@ -29,10 +29,10 @@ class WorkflowGraphDatabase:
             'Relationships': {
                 'Tool_to_Version': 'HAS_VERSION',
                 'Version_to_ToolOutput': 'GENERATES_OUTPUT',
-                'Version_to_ToolInput': 'TAKES_INPUT',
-                'WorkflowConnection_to_ToolOutput': 'CONNECTS_OUTPUT',
+                'Version_to_ToolInput': 'FEEDS_INTO',
+                'WorkflowConnection_to_ToolOutput': 'IS_CONNECTED_BY',
                 'WorkflowConnection_to_ToolInput': 'TO_INPUT',
-                'Workflow_to_WorkflowConnection': 'DESCRIBES_CONNECTION',
+                #'Workflow_to_WorkflowConnection': 'DESCRIBES_CONNECTION',
                 'ToolOutput_to_Datatype': 'HAS_DATATYPE',
                 'ToolInput_to_Datatype': 'HAS_DATATYPE',
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
@@ -98,9 +98,9 @@ class WorkflowGraphDatabase:
             "WITH tc, in_tool, in_v, d_out "
             "MATCH (out_tool: {out_tool}) MERGE (out_tool) -[:{tv_rel}] ->(out_v: {out_version}) "
             "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
-            "MERGE (out_v) -[:{v_in}] ->(d_in: {input_dataset}) "
+            "MERGE (out_v) <-[:{v_in}] -(d_in: {input_dataset}) "
             "WITH tc, d_out, d_in "
-            "MERGE (d_out)<- [:{conn_out}] -(wf_conn:{wf_conn}) -[:{conn_in}] ->(d_in)"
+            "MERGE (d_out)- [:{conn_out}] ->(wf_conn:{wf_conn}) -[:{conn_in}] ->(d_in)"
         ).format(
             file_name=os.path.basename(file_path),
             in_tool=in_tool,
@@ -128,11 +128,13 @@ class WorkflowGraphDatabase:
         """
         Build query string for bulk import of Tools IO data.
         """
-
+        # input: MERGE (v)<-[:{vio_rel}]-(d:{dataset}) output: MERGE (v)-[:{vio_rel}]->(d:{dataset})
         if self.components['Nodes']['ToolInput'] in column_map:
             io_node = 'ToolInput'
+            io_rel = '<-[:{0}]-'.format(self.components['Relationships']['Version_to_ToolInput'])
         else:
             io_node = 'ToolOutput'
+            io_rel = '-[:{0}]->'.format(self.components['Relationships']['Version_to_ToolOutput'])
 
         tool = '{0}{{name:source.{1}}}'.format(
             self.components['Nodes']['Tool'],
@@ -164,7 +166,7 @@ class WorkflowGraphDatabase:
             "MERGE (dt)-[:{dtfmt_rel}]->(fmt) "
             "MERGE (t)-[:{tv_rel}]->(v:{version}) "
             "WITH source, v, dt "
-            "MERGE (v)-[:{vio_rel}]->(d:{dataset}) "
+            "MERGE (v){io_rel}(d:{dataset}) "
             "WITH source, d, dt "
             "MERGE (d)-[:{dt_rel}]->(dt) "
         ).format(
@@ -175,9 +177,7 @@ class WorkflowGraphDatabase:
             datatype=datatype,
             edam_format=edam_format,
             tv_rel=self.components['Relationships']['Tool_to_Version'],
-            vio_rel=self.components['Relationships'][
-                'Version_to_{0}'.format(io_node)
-            ],
+            io_rel=io_rel,
             dt_rel=self.components['Relationships'][
                 '{0}_to_Datatype'.format(io_node)
             ],
