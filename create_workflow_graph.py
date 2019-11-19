@@ -34,57 +34,26 @@ class WorkflowGraphDatabase:
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
             }
         }
-        self.tool_node = "Tool"
-        self.version_node = "Version"
-        self.format_node = "Format"
-        self.tool_version_relation = "IS_VERSION_OF"
-        self.version_output_format_relation = "V_OUTPUT_FORMAT"
-        self.output_input_format_relation = "COMPATIBLE"
-        self.input_format_version_relation = "INPUT_FORMAT_V"
-        self.version_tool_relation = "V_TOOL"
 
     def create_graph_bulk_merge(self, file_name):
         """
         Create graph database with bulk import
         """
-        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'        
-        '''query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
-        query += "WITH tool_connections "
-        query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
-
-        query += "WITH tool_connections "
-        query += "MATCH (in_tool: Tool {name: tool_connections.in_tool}) MERGE (in_tool) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) "
-
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(tool_input_v: Version {name: tool_connections.in_tool_version}) "
-        query += "MERGE (tool_input_v) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) "
-
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(tool_output: Format {name: tool_connections.in_tool_output}) "
-        query += "MERGE (tool_output) -[:COMPATIBLE] ->(: Format {name: tool_connections.out_tool_input}) " 
-
-        query += "WITH tool_connections "
-        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(:Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(tool_input: Format {name: tool_connections.out_tool_input}) "
-        query += "MERGE (tool_input) -[:INPUT_FORMAT_V] ->(tool_output_v: Version {name: tool_connections.out_tool_version}) "
-        
-        query += "WITH tool_connections "
-        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(:Format {name: tool_connections.out_tool_input}) -[:INPUT_FORMAT_V] ->(: Version {name: tool_connections.out_tool_version}) "
-
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(: Format {name: tool_connections.out_tool_input}) -[:INPUT_FORMAT_V] ->(tool_output_v: Version {name: tool_connections.out_tool_version}) "
-        query += "MERGE (tool_output_v) -[:V_TOOL] ->(out_tool: Tool {name: tool_connections.out_tool}) "
-        
-        print(query)'''
-        
+        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'                
         wf_query = "LOAD CSV WITH HEADERS FROM 'file:///corrected_gxadmin_workflow_connections_88551.csv' AS tc "
-        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool)<-[:IS_VERSION_OF]-(in_v: Version {name: tc.in_tool_version}) "
+        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool)<- [:IS_VERSION_OF] -(in_v: Version {name: tc.in_tool_version}) "
+        
         wf_query += "WITH tc, in_tool, in_v "
-        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool)<-[:IS_VERSION_OF]-(out_v:Version {name: tc.out_tool_version}) "
-        wf_query += "WITH tc, in_tool, in_v, out_tool, out_v "
-        wf_query += "MATCH (in_tool) <- [:IS_VERSION_OF] -(in_v) MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
-        wf_query += "WITH tc, out_tool, out_v "
-        wf_query += "MATCH (out_tool) <- [:IS_VERSION_OF] -(out_v) MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
-        wf_query += "MERGE (d_out) -[:WORKFLOW_CONNECTION] -> (d_in)"
+        wf_query += "MATCH (in_tool)<- [:IS_VERSION_OF] -(in_v) MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
+        
+        wf_query += "WITH tc, in_tool, in_v, d_out "
+        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool)<- [:IS_VERSION_OF] -(out_v: Version {name: tc.out_tool_version}) "
+        
+        wf_query += "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
+        wf_query += "MATCH (out_tool)<- [:IS_VERSION_OF] -(out_v) MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
+        
+        wf_query += "WITH tc, d_out, d_in "
+        wf_query += "MERGE (d_out) -[:WORKFLOW_CONNECTION] ->(d_in)"
 
         print("Creating database in bulk...")
         s_time = time.time()
