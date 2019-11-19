@@ -27,7 +27,7 @@ class WorkflowGraphDatabase:
                 'OutToolV': 'Version'
             },
             'Relationships': {
-                'Tool_to_Version': 'IS_VERSION_OF',
+                'Tool_to_Version': 'HAS_VERSION',
                 'Version_to_ToolOutput': 'GENERATES_OUTPUT',
                 'Version_to_ToolInput': 'TAKES_INPUT',
                 'WorkflowConnection_to_ToolOutput': 'CONNECTS_OUTPUT',
