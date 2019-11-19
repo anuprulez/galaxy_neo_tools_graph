@@ -3,7 +3,7 @@ import os
 import time
 
 
-from py2neo import Graph, Node, Relationship
+from py2neo import Graph
 
 
 class WorkflowGraphDatabase:
@@ -21,64 +21,105 @@ class WorkflowGraphDatabase:
                 'Workflow': 'Workflow',
                 'Datatype': 'Datatype',
                 'EDAMFormat': 'EDAMFormat',
+                'InTool': 'Tool',
+                'OutTool': 'Tool',
+                'InToolV': 'Version',
+                'OutToolV': 'Version'
             },
             'Relationships': {
-                'Tool_to_Version': 'IS_VERSION_OF',
+                'Tool_to_Version': 'HAS_VERSION',
                 'Version_to_ToolOutput': 'GENERATES_OUTPUT',
-                'Version_to_ToolInput': 'TAKES_INPUT',
-                'WorkflowConnection_to_ToolOutput': 'CONNECTS_OUTPUT',
+                'Version_to_ToolInput': 'FEEDS_INTO',
+                'WorkflowConnection_to_ToolOutput': 'IS_CONNECTED_BY',
                 'WorkflowConnection_to_ToolInput': 'TO_INPUT',
-                'Workflow_to_WorkflowConnection': 'DESCRIBES_CONNECTION',
                 'ToolOutput_to_Datatype': 'HAS_DATATYPE',
                 'ToolInput_to_Datatype': 'HAS_DATATYPE',
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
             }
         }
-        self.tool_node = "Tool"
-        self.version_node = "Version"
-        self.format_node = "Format"
-        self.tool_version_relation = "IS_VERSION_OF"
-        self.version_output_format_relation = "V_OUTPUT_FORMAT"
-        self.output_input_format_relation = "COMPATIBLE"
-        self.input_format_version_relation = "INPUT_FORMAT_V"
-        self.version_tool_relation = "V_TOOL"
 
-    def create_graph_bulk_merge(self, file_name):
+    def create_graph_bulk_merge(self, file_path):
         """
         Create graph database with bulk import
         """
-        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'        
-        query = "LOAD CSV WITH HEADERS FROM 'file:///" + file_name + "' AS tool_connections "
-        query += "WITH tool_connections "
-        query += "MERGE (in_tool: Tool {name: tool_connections.in_tool}) "
+        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'
+        with open(file_path, 'r') as i:
+            # associate db Nodes with csv column names
+            wf_column_map = dict(
+                zip(
+                    (
+                        'InTool',
+                        'InToolV',
+                        'ToolOutput',
+                        'OutTool',
+                        'ToolInput',
+                        'OutToolV'
+                    ),
+                    i.readline().strip().split(',')
+                )
+            )
 
-        query += "WITH tool_connections "
-        query += "MATCH (in_tool: Tool {name: tool_connections.in_tool}) MERGE (in_tool) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) "
+        in_tool = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            wf_column_map['InTool']
+        )
 
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(tool_input_v: Version {name: tool_connections.in_tool_version}) "
-        query += "MERGE (tool_input_v) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) "
+        out_tool = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            wf_column_map['OutTool']
+        )
 
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(tool_output: Format {name: tool_connections.in_tool_output}) "
-        query += "MERGE (tool_output) -[:COMPATIBLE] ->(: Format {name: tool_connections.out_tool_input}) " 
+        in_version = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            wf_column_map['InToolV']
+        )
 
-        query += "WITH tool_connections "
-        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(:Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(tool_input: Format {name: tool_connections.out_tool_input}) "
-        query += "MERGE (tool_input) -[:INPUT_FORMAT_V] ->(tool_output_v: Version {name: tool_connections.out_tool_version}) "
-        
-        query += "WITH tool_connections "
-        query += "MATCH (:Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(:Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(:Format {name: tool_connections.out_tool_input}) -[:INPUT_FORMAT_V] ->(: Version {name: tool_connections.out_tool_version}) "
+        out_version = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            wf_column_map['OutToolV']
+        )
 
-        query += "WITH tool_connections "
-        query += "MATCH (: Tool {name: tool_connections.in_tool}) -[:TOOL_V] ->(: Version {name: tool_connections.in_tool_version}) -[:V_OUTPUT_FORMAT] ->(: Format {name: tool_connections.in_tool_output}) -[:COMPATIBLE] ->(: Format {name: tool_connections.out_tool_input}) -[:INPUT_FORMAT_V] ->(tool_output_v: Version {name: tool_connections.out_tool_version}) "
-        query += "MERGE (tool_output_v) -[:V_TOOL] ->(out_tool: Tool {name: tool_connections.out_tool}) "
-        
-        print(query)
+        output_dataset = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['ToolOutput'],
+            wf_column_map['ToolOutput']
+        )
+
+        input_dataset = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['ToolInput'],
+            wf_column_map['ToolInput']
+        )
+
+        wf_query = (
+            "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
+            "MATCH (in_tool: {in_tool}) MERGE (in_tool) -[:{tv_rel}] ->(in_v: {in_version}) "
+            "WITH tc, in_tool, in_v "
+            "MERGE (in_v) -[:{v_out}] ->(d_out: {output_dataset}) "
+            "WITH tc, in_tool, in_v, d_out "
+            "MATCH (out_tool: {out_tool}) MERGE (out_tool) -[:{tv_rel}] ->(out_v: {out_version}) "
+            "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
+            "MERGE (out_v) <-[:{v_in}] -(d_in: {input_dataset}) "
+            "WITH tc, d_out, d_in "
+            "MERGE (d_out)- [:{conn_out}] ->(wf_conn:{wf_conn}) -[:{conn_in}] ->(d_in)"
+        ).format(
+            file_name=os.path.basename(file_path),
+            in_tool=in_tool,
+            tv_rel=self.components['Relationships']['Tool_to_Version'],
+            in_version=in_version,
+            v_out=self.components['Relationships']['Version_to_ToolOutput'],
+            output_dataset=output_dataset,
+            out_tool=out_tool,
+            out_version=out_version,
+            v_in=self.components["Relationships"]['Version_to_ToolInput'],
+            input_dataset=input_dataset,
+            conn_out=self.components["Relationships"]["WorkflowConnection_to_ToolOutput"],
+            wf_conn=self.components["Nodes"]["WorkflowConnection"],
+            conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"]
+        )
 
         print("Creating database in bulk...")
+        print(wf_query)
         s_time = time.time()
-        self.graph.run(query)
+        self.graph.run(wf_query)
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
@@ -86,11 +127,12 @@ class WorkflowGraphDatabase:
         """
         Build query string for bulk import of Tools IO data.
         """
-
         if self.components['Nodes']['ToolInput'] in column_map:
             io_node = 'ToolInput'
+            io_rel = '<-[:{0}]-'.format(self.components['Relationships']['Version_to_ToolInput'])
         else:
             io_node = 'ToolOutput'
+            io_rel = '-[:{0}]->'.format(self.components['Relationships']['Version_to_ToolOutput'])
 
         tool = '{0}{{name:source.{1}}}'.format(
             self.components['Nodes']['Tool'],
@@ -120,9 +162,9 @@ class WorkflowGraphDatabase:
             "MERGE (t:{tool}) MERGE (dt:{datatype}) MERGE (fmt:{edam_format}) "
             "WITH source, t, dt, fmt "
             "MERGE (dt)-[:{dtfmt_rel}]->(fmt) "
-            "MERGE (t)<-[:{tv_rel}]-(v:{version}) "
+            "MERGE (t)-[:{tv_rel}]->(v:{version}) "
             "WITH source, v, dt "
-            "MERGE (v)-[:{vio_rel}]->(d:{dataset}) "
+            "MERGE (v){io_rel}(d:{dataset}) "
             "WITH source, d, dt "
             "MERGE (d)-[:{dt_rel}]->(dt) "
         ).format(
@@ -133,9 +175,7 @@ class WorkflowGraphDatabase:
             datatype=datatype,
             edam_format=edam_format,
             tv_rel=self.components['Relationships']['Tool_to_Version'],
-            vio_rel=self.components['Relationships'][
-                'Version_to_{0}'.format(io_node)
-            ],
+            io_rel=io_rel,
             dt_rel=self.components['Relationships'][
                 '{0}_to_Datatype'.format(io_node)
             ],
@@ -187,25 +227,10 @@ class WorkflowGraphDatabase:
         print("Fetching records...")
         print()
         s_time = time.time()
-        i_name = "trimmomatic"
-        o_name = "bowtie2"
         get_all_nodes_query = "MATCH (n) RETURN n"
         all_nodes = self.graph.run(get_all_nodes_query).data()
         print("Number of all nodes: %d" % len(all_nodes))
         print()
-        query1 = "MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b"
-        query2 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) RETURN p"
-        # get the shortest path between two nodes having certain minimum length 
-        query3 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p"
-        # get all paths/relations
-        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*..10] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 10"
-        fetch = self.graph.run(query4, name_a=i_name, name_b=o_name).data()
-        # get next tool for any tool
-        #query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..6] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools"
-        #fetch = self.graph.run(query5, name_a=i_name).data()
-        for path in fetch:
-            print(path)
-            print()
         e_time = time.time()
         print("Time elapsed in fetching records: %d seconds" % int(e_time - s_time))
 
@@ -216,12 +241,16 @@ if __name__ == "__main__":
     arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
     arg_parser.add_argument("-pass", "--password", required=True, help="Password")
     arg_parser.add_argument("-cd", "--create_database", required=True, help="Create a new database or not")
+    arg_parser.add_argument("-ti", "--tool_inputs_file", required=True, help="Tool inputs file")
+    arg_parser.add_argument("-to", "--tool_outputs_file", required=True, help="Tool outputs file")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
     password = args["password"]
     create_db = args["create_database"]
+    t_inputs_file = args["tool_inputs_file"]
+    t_output_file = args["tool_outputs_file"]
     workflow_file = args["workflow_file"]
     # connect to neo4j database
     graph_db = WorkflowGraphDatabase(url, username, password)
@@ -229,6 +258,8 @@ if __name__ == "__main__":
     if create_db == "true":
         n = graph_db.graph.delete_all()
         assert n == None
+        graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
+        graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
         graph_db.create_graph_bulk_merge(workflow_file)
     # run queries against database
     graph_db.fetch_records()
