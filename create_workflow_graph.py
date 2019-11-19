@@ -42,7 +42,7 @@ class WorkflowGraphDatabase:
         """
         Create graph database with bulk import
         """
-        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'                      
+        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'
         with open(file_path, 'r') as i:
             # associate db Nodes with csv column names
             wf_column_map = dict(
@@ -50,8 +50,8 @@ class WorkflowGraphDatabase:
                     (
                         'InTool',
                         'InToolV',
-                        'ToolOutput', 
-                        'OutTool', 
+                        'ToolOutput',
+                        'OutTool',
                         'ToolInput',
                         'OutToolV'
                     ),
@@ -63,27 +63,27 @@ class WorkflowGraphDatabase:
             self.components['Nodes']['Tool'],
             wf_column_map['InTool']
         )
-        
+
         out_tool = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['Tool'],
             wf_column_map['OutTool']
         )
-        
+
         in_version = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['Version'],
             wf_column_map['InToolV']
         )
-        
+
         out_version = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['Version'],
             wf_column_map['OutToolV']
         )
-        
+
         output_dataset = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['ToolOutput'],
             wf_column_map['ToolOutput']
         )
-        
+
         input_dataset = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['ToolInput'],
             wf_column_map['ToolInput']
@@ -244,7 +244,6 @@ if __name__ == "__main__":
     arg_parser.add_argument("-ti", "--tool_inputs_file", required=True, help="Tool inputs file")
     arg_parser.add_argument("-to", "--tool_outputs_file", required=True, help="Tool outputs file")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
-    
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
