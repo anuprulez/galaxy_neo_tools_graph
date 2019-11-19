@@ -3,7 +3,7 @@ import os
 import time
 
 
-from py2neo import Graph, Node, Relationship
+from py2neo import Graph
 
 
 class WorkflowGraphDatabase:
@@ -32,7 +32,6 @@ class WorkflowGraphDatabase:
                 'Version_to_ToolInput': 'FEEDS_INTO',
                 'WorkflowConnection_to_ToolOutput': 'IS_CONNECTED_BY',
                 'WorkflowConnection_to_ToolInput': 'TO_INPUT',
-                #'Workflow_to_WorkflowConnection': 'DESCRIBES_CONNECTION',
                 'ToolOutput_to_Datatype': 'HAS_DATATYPE',
                 'ToolInput_to_Datatype': 'HAS_DATATYPE',
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
@@ -128,7 +127,6 @@ class WorkflowGraphDatabase:
         """
         Build query string for bulk import of Tools IO data.
         """
-        # input: MERGE (v)<-[:{vio_rel}]-(d:{dataset}) output: MERGE (v)-[:{vio_rel}]->(d:{dataset})
         if self.components['Nodes']['ToolInput'] in column_map:
             io_node = 'ToolInput'
             io_rel = '<-[:{0}]-'.format(self.components['Relationships']['Version_to_ToolInput'])
@@ -229,25 +227,10 @@ class WorkflowGraphDatabase:
         print("Fetching records...")
         print()
         s_time = time.time()
-        i_name = "trimmomatic"
-        o_name = "bowtie2"
         get_all_nodes_query = "MATCH (n) RETURN n"
         all_nodes = self.graph.run(get_all_nodes_query).data()
         print("Number of all nodes: %d" % len(all_nodes))
         print()
-        query1 = "MATCH (a:Tool {name: {name_a}}) - [:OUTPUT] -> (b:Tool {name: {name_b}}) RETURN a, b"
-        query2 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) RETURN p"
-        # get the shortest path between two nodes having certain minimum length 
-        query3 = "MATCH (a:Tool { name: {name_a}}), (b:Tool { name: {name_b}}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p"
-        # get all paths/relations
-        query4 = "MATCH (a:Tool {name: {name_a}}) - [r*..10] -> (b:Tool {name: {name_b}}) RETURN r LIMIT 10"
-        fetch = self.graph.run(query4, name_a=i_name, name_b=o_name).data()
-        # get next tool for any tool
-        #query5 = "MATCH (a:Tool {name: {name_a}}) - [r*..6] -> (b:Tool) RETURN COLLECT(distinct b.name) as predicted_tools"
-        #fetch = self.graph.run(query5, name_a=i_name).data()
-        for path in fetch:
-            print(path)
-            print()
         e_time = time.time()
         print("Time elapsed in fetching records: %d seconds" % int(e_time - s_time))
 
@@ -258,12 +241,17 @@ if __name__ == "__main__":
     arg_parser.add_argument("-un", "--user_name", required=True, help="User name")
     arg_parser.add_argument("-pass", "--password", required=True, help="Password")
     arg_parser.add_argument("-cd", "--create_database", required=True, help="Create a new database or not")
+    arg_parser.add_argument("-ti", "--tool_inputs_file", required=True, help="Tool inputs file")
+    arg_parser.add_argument("-to", "--tool_outputs_file", required=True, help="Tool outputs file")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
+    
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
     password = args["password"]
     create_db = args["create_database"]
+    t_inputs_file = args["tool_inputs_file"]
+    t_output_file = args["tool_outputs_file"]
     workflow_file = args["workflow_file"]
     # connect to neo4j database
     graph_db = WorkflowGraphDatabase(url, username, password)
@@ -271,9 +259,8 @@ if __name__ == "__main__":
     if create_db == "true":
         n = graph_db.graph.delete_all()
         assert n == None
-
-        graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_iformats.csv", "ToolInput")
-        graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_oformats.csv", "ToolOutput")
-        graph_db.create_graph_bulk_merge("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/corrected_gxadmin_workflow_connections_88551.csv")
+        graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
+        graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
+        graph_db.create_graph_bulk_merge(workflow_file)
     # run queries against database
     graph_db.fetch_records()
