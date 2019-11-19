@@ -21,6 +21,10 @@ class WorkflowGraphDatabase:
                 'Workflow': 'Workflow',
                 'Datatype': 'Datatype',
                 'EDAMFormat': 'EDAMFormat',
+                'InTool': 'Tool',
+                'OutTool': 'Tool',
+                'InToolV': 'Version',
+                'OutToolV': 'Version'
             },
             'Relationships': {
                 'Tool_to_Version': 'IS_VERSION_OF',
@@ -35,27 +39,86 @@ class WorkflowGraphDatabase:
             }
         }
 
-    def create_graph_bulk_merge(self, file_name):
+    def create_graph_bulk_merge(self, file_path):
         """
         Create graph database with bulk import
         """
-        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'                
-        wf_query = "LOAD CSV WITH HEADERS FROM 'file:///corrected_gxadmin_workflow_connections_88551.csv' AS tc "
-        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool) -[:IS_VERSION_OF] ->(in_v: Version {name: tc.in_tool_version}) "
+        # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'                      
+        with open(file_path, 'r') as i:
+            # associate db Nodes with csv column names
+            wf_column_map = dict(
+                zip(
+                    (
+                        'InTool',
+                        'InToolV',
+                        'ToolOutput', 
+                        'OutTool', 
+                        'ToolInput',
+                        'OutToolV'
+                    ),
+                    i.readline().strip().split(',')
+                )
+            )
+
+        in_tool = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            wf_column_map['InTool']
+        )
         
-        wf_query += "WITH tc, in_tool, in_v "
-        wf_query += "MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
+        out_tool = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            wf_column_map['OutTool']
+        )
         
-        wf_query += "WITH tc, in_tool, in_v, d_out "
-        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool) -[:IS_VERSION_OF] ->(out_v: Version {name: tc.out_tool_version}) "
+        in_version = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            wf_column_map['InToolV']
+        )
         
-        wf_query += "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
-        wf_query += "MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
+        out_version = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            wf_column_map['OutToolV']
+        )
         
-        wf_query += "WITH tc, d_out, d_in "
-        wf_query += "MERGE (d_out)<- [:CONNECTS_OUTPUT] - (wf_conn: WorkflowConnection) -[:TO_INPUT] ->(d_in)"
+        output_dataset = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['ToolOutput'],
+            wf_column_map['ToolOutput']
+        )
+        
+        input_dataset = '{0}{{name:tc.{1}}}'.format(
+            self.components['Nodes']['ToolInput'],
+            wf_column_map['ToolInput']
+        )
+
+        wf_query = (
+            "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
+            "MATCH (in_tool: {in_tool}) MERGE (in_tool) -[:{tv_rel}] ->(in_v: {in_version}) "
+            "WITH tc, in_tool, in_v "
+            "MERGE (in_v) -[:{v_out}] ->(d_out: {output_dataset}) "
+            "WITH tc, in_tool, in_v, d_out "
+            "MATCH (out_tool: {out_tool}) MERGE (out_tool) -[:{tv_rel}] ->(out_v: {out_version}) "
+            "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
+            "MERGE (out_v) -[:{v_in}] ->(d_in: {input_dataset}) "
+            "WITH tc, d_out, d_in "
+            "MERGE (d_out)<- [:{conn_out}] -(wf_conn:{wf_conn}) -[:{conn_in}] ->(d_in)"
+        ).format(
+            file_name=os.path.basename(file_path),
+            in_tool=in_tool,
+            tv_rel=self.components['Relationships']['Tool_to_Version'],
+            in_version=in_version,
+            v_out=self.components['Relationships']['Version_to_ToolOutput'],
+            output_dataset=output_dataset,
+            out_tool=out_tool,
+            out_version=out_version,
+            v_in=self.components["Relationships"]['Version_to_ToolInput'],
+            input_dataset=input_dataset,
+            conn_out=self.components["Relationships"]["WorkflowConnection_to_ToolOutput"],
+            wf_conn=self.components["Nodes"]["WorkflowConnection"],
+            conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"]
+        )
 
         print("Creating database in bulk...")
+        print(wf_query)
         s_time = time.time()
         self.graph.run(wf_query)
         e_time = time.time()
@@ -211,6 +274,6 @@ if __name__ == "__main__":
 
         graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_iformats.csv", "ToolInput")
         graph_db.load_io_data_from_csv("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/tool_oformats.csv", "ToolOutput")
-        graph_db.create_graph_bulk_merge(workflow_file)
+        graph_db.create_graph_bulk_merge("/home/kumara/Graphdatabases/galaxy_neo_tools_graph/data/corrected_gxadmin_workflow_connections_88551.csv")
     # run queries against database
     graph_db.fetch_records()
