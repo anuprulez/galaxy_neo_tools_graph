@@ -41,19 +41,19 @@ class WorkflowGraphDatabase:
         """
         # To make this query work, copy the csv file to /var/lib/neo4j/import/ and just pass the file name for the argument 'wf'                
         wf_query = "LOAD CSV WITH HEADERS FROM 'file:///corrected_gxadmin_workflow_connections_88551.csv' AS tc "
-        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool)<- [:IS_VERSION_OF] -(in_v: Version {name: tc.in_tool_version}) "
+        wf_query += "MATCH (in_tool: Tool {name: tc.in_tool}) MERGE (in_tool) -[:IS_VERSION_OF] ->(in_v: Version {name: tc.in_tool_version}) "
         
         wf_query += "WITH tc, in_tool, in_v "
-        wf_query += "MATCH (in_tool)<- [:IS_VERSION_OF] -(in_v) MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
+        wf_query += "MERGE (in_v) -[:GENERATES_OUTPUT] ->(d_out: ToolOutput {name: tc.in_tool_output}) "
         
         wf_query += "WITH tc, in_tool, in_v, d_out "
-        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool)<- [:IS_VERSION_OF] -(out_v: Version {name: tc.out_tool_version}) "
+        wf_query += "MATCH (out_tool: Tool {name: tc.out_tool}) MERGE (out_tool) -[:IS_VERSION_OF] ->(out_v: Version {name: tc.out_tool_version}) "
         
         wf_query += "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
-        wf_query += "MATCH (out_tool)<- [:IS_VERSION_OF] -(out_v) MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
+        wf_query += "MERGE (out_v) -[:TAKES_INPUT] ->(d_in: ToolInput {name: tc.out_tool_input}) "
         
         wf_query += "WITH tc, d_out, d_in "
-        wf_query += "MERGE (d_out) -[:WORKFLOW_CONNECTION] ->(d_in)"
+        wf_query += "MERGE (d_out)<- [:CONNECTS_OUTPUT] - (wf_conn: WorkflowConnection) -[:TO_INPUT] ->(d_in)"
 
         print("Creating database in bulk...")
         s_time = time.time()
@@ -99,7 +99,7 @@ class WorkflowGraphDatabase:
             "MERGE (t:{tool}) MERGE (dt:{datatype}) MERGE (fmt:{edam_format}) "
             "WITH source, t, dt, fmt "
             "MERGE (dt)-[:{dtfmt_rel}]->(fmt) "
-            "MERGE (t)<-[:{tv_rel}]-(v:{version}) "
+            "MERGE (t)-[:{tv_rel}]->(v:{version}) "
             "WITH source, v, dt "
             "MERGE (v)-[:{vio_rel}]->(d:{dataset}) "
             "WITH source, d, dt "
