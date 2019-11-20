@@ -91,15 +91,15 @@ class WorkflowGraphDatabase:
 
         wf_query = (
             "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
-            "MATCH (in_tool: {in_tool}) MERGE (in_tool) -[:{tv_rel}] ->(in_v: {in_version}) "
-            "WITH tc, in_tool, in_v "
-            "MERGE (in_v) -[:{v_out}] ->(d_out: {output_dataset}) "
-            "WITH tc, in_tool, in_v, d_out "
-            "MATCH (out_tool: {out_tool}) MERGE (out_tool) -[:{tv_rel}] ->(out_v: {out_version}) "
-            "WITH tc, in_tool, in_v, out_tool, out_v, d_out "
-            "MERGE (out_v) <-[:{v_in}] -(d_in: {input_dataset}) "
+            "MERGE (in_tool:{in_tool}) MERGE (out_tool: {out_tool}) "
+            "WITH tc, in_tool, out_tool "
+            "MERGE (in_tool)-[:{tv_rel}]->(in_v:{in_version}) "
+            "MERGE (out_tool)-[:{tv_rel}]->(out_v:{out_version}) "
+            "WITH tc, in_v, out_v "
+            "MERGE (in_v)-[:{v_out}]->(d_out:{output_dataset}) "
+            "MERGE (out_v)<-[:{v_in}]-(d_in: {input_dataset}) "
             "WITH tc, d_out, d_in "
-            "MERGE (d_out)- [:{conn_out}] ->(wf_conn:{wf_conn}) -[:{conn_in}] ->(d_in)"
+            "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in)"
         ).format(
             file_name=os.path.basename(file_path),
             in_tool=in_tool,
@@ -258,8 +258,8 @@ if __name__ == "__main__":
     if create_db == "true":
         n = graph_db.graph.delete_all()
         assert n == None
-        graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
-        graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
-        graph_db.create_graph_bulk_merge(workflow_file)
+    graph_db.create_graph_bulk_merge(workflow_file)
+    graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
+    graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
     # run queries against database
     graph_db.fetch_records()
