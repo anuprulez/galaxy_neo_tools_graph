@@ -32,6 +32,7 @@ class WorkflowGraphDatabase:
                 'Version_to_ToolInput': 'FEEDS_INTO',
                 'WorkflowConnection_to_ToolOutput': 'IS_CONNECTED_BY',
                 'WorkflowConnection_to_ToolInput': 'TO_INPUT',
+                'Workflow': 'WORKFLOW',
                 'ToolOutput_to_Datatype': 'HAS_DATATYPE',
                 'ToolInput_to_Datatype': 'HAS_DATATYPE',
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
@@ -48,6 +49,7 @@ class WorkflowGraphDatabase:
             wf_column_map = dict(
                 zip(
                     (
+                        'WfId',
                         'InTool',
                         'InToolV',
                         'ToolOutput',
@@ -89,17 +91,23 @@ class WorkflowGraphDatabase:
             wf_column_map['ToolInput']
         )
 
+        workflow = '{0}{{name:tc.{1}}}'.format(
+            self.components["Nodes"]["Workflow"],
+            wf_column_map['WfId']
+        )
+
         wf_query = (
             "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
-            "MERGE (in_tool:{in_tool}) MERGE (out_tool: {out_tool}) "
-            "WITH tc, in_tool, out_tool "
+            "MERGE (in_tool:{in_tool}) MERGE (out_tool: {out_tool}) MERGE (wf:{workflow}) "
+            "WITH tc, in_tool, out_tool, wf "
             "MERGE (in_tool)-[:{tv_rel}]->(in_v:{in_version}) "
             "MERGE (out_tool)-[:{tv_rel}]->(out_v:{out_version}) "
-            "WITH tc, in_v, out_v "
+            "WITH tc, in_v, out_v, wf "
             "MERGE (in_v)-[:{v_out}]->(d_out:{output_dataset}) "
             "MERGE (out_v)<-[:{v_in}]-(d_in: {input_dataset}) "
-            "WITH tc, d_out, d_in "
-            "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in)"
+            "WITH tc, d_out, d_in, wf "
+            "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in) "
+            "MERGE (wf_conn) -[:{workflow_rel}] ->(wf)"
         ).format(
             file_name=os.path.basename(file_path),
             in_tool=in_tool,
@@ -113,7 +121,9 @@ class WorkflowGraphDatabase:
             input_dataset=input_dataset,
             conn_out=self.components["Relationships"]["WorkflowConnection_to_ToolOutput"],
             wf_conn=self.components["Nodes"]["WorkflowConnection"],
-            conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"]
+            conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"],
+            workflow_rel=self.components["Relationships"]["Workflow"],
+            workflow=workflow
         )
 
         print("Creating database in bulk...")
@@ -262,5 +272,6 @@ if __name__ == "__main__":
     graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
     graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
     graph_db.create_index(graph_db.components["Nodes"]["Tool"])
+    graph_db.create_index(graph_db.components["Nodes"]["Datatype"])
     # run queries against database
     graph_db.fetch_records()
