@@ -220,8 +220,8 @@ class WorkflowGraphDatabase:
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
-    def create_index(self):
-        self.graph.schema.create_index("Tool", "name")
+    def create_index(self, node):
+        self.graph.schema.create_index(node, "name")
 
     def fetch_records(self):
         print("Fetching records...")
@@ -261,5 +261,6 @@ if __name__ == "__main__":
     graph_db.create_graph_bulk_merge(workflow_file)
     graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
     graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
+    graph_db.create_index(graph_db.components["Nodes"]["Tool"])
     # run queries against database
     graph_db.fetch_records()
