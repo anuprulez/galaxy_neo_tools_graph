@@ -47,4 +47,17 @@ MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_
 MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(dt:Datatype) 
 WHERE v.name IN ["2.3.2.2","0.4"]
 RETURN a,v,o,dt
-LIMIT 100
+LIMIT 10
+
+MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool{name: "featurecounts"}) RETURN a,v,o,od,wc,i,iv,ot
+
+MATCH p = (a:Tool {name: "trimmomatic"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool{name: "bowtie2"}) RETURN a,v,o,od,wc,i,iv,ot LIMIT 10
+
+MATCH p = (a:Tool {name: "trimmomatic"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool) RETURN a,v,o,od,wc,i,iv,ot LIMIT 20
+
+MATCH p = (a:Tool {name: "trimmomatic"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool{name: "featurecounts"}) RETURN a,v,o,od,wc,i,iv,ot
+
+MATCH p = (a:Tool {name: "freebayes"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] -(od:Datatype) RETURN a,v,o,od LIMIT 100
+
+
+MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool) RETURN a,v,o,od,wc,i,iv,ot LIMIT 20
