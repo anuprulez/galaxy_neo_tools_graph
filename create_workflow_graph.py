@@ -60,6 +60,17 @@ class WorkflowGraphDatabase:
                     i.readline().strip().split(',')
                 )
             )
+            dirname, basename = os.path.split(file_path)
+            # write deduplicated workflow ids to separate file
+            # for efficient merging
+            wf_ids_seen = set()
+            with open(os.path.join(dirname, 'wf_ids.csv'), 'w') as o:
+                o.write(wf_column_map['WfId'] + '\n')
+                for line in i:
+                    wf_id = line.split(',', maxsplit=1)[0]
+                    if wf_id not in wf_ids_seen:
+                        o.write(wf_id + '\n')
+                        wf_ids_seen.add(wf_id)
 
         in_tool = '{0}{{name:tc.{1}}}'.format(
             self.components['Nodes']['Tool'],
@@ -91,22 +102,36 @@ class WorkflowGraphDatabase:
             wf_column_map['ToolInput']
         )
 
-        workflow = '{0}{{name:tc.{1}}}'.format(
+        workflow = '{0}{{id:tc.{1}}}'.format(
             self.components["Nodes"]["Workflow"],
             wf_column_map['WfId']
         )
 
         wf_query = (
+            "CREATE INDEX ON :Workflow(id);"
+
+            "LOAD CSV WITH HEADERS FROM 'file:///wf_ids.csv' AS tc "
+            "MERGE (:{workflow});"
+
             "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
-            "MERGE (in_tool:{in_tool}) MERGE (out_tool: {out_tool}) MERGE (wf:{workflow}) "
-            "WITH tc, in_tool, out_tool, wf "
+            "MERGE (:{in_tool});"
+
+            "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
+            "MERGE (:{out_tool});"
+
+            "USING PERIODIC COMMIT 1000 "
+            "LOAD CSV WITH HEADERS FROM 'file:///{file_name}' AS tc "
+            "MATCH (in_tool:{in_tool}) "
+            "MATCH (out_tool:{out_tool}) "
             "MERGE (in_tool)-[:{tv_rel}]->(in_v:{in_version}) "
             "MERGE (out_tool)-[:{tv_rel}]->(out_v:{out_version}) "
-            "WITH tc, in_v, out_v, wf "
+            "WITH tc, in_v, out_v "
             "MERGE (in_v)-[:{v_out}]->(d_out:{output_dataset}) "
-            "MERGE (out_v)<-[:{v_in}]-(d_in: {input_dataset}) "
-            "WITH tc, d_out, d_in, wf "
+            "MERGE (out_v)<-[:{v_in}]-(d_in:{input_dataset}) "
+            "WITH tc, d_out, d_in "
             "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in) "
+            "WITH tc, wf_conn "
+            "MATCH (wf:{workflow}) "
             "MERGE (wf_conn) -[:{workflow_rel}] ->(wf)"
         ).format(
             file_name=os.path.basename(file_path),
@@ -124,12 +149,13 @@ class WorkflowGraphDatabase:
             conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"],
             workflow_rel=self.components["Relationships"]["Workflow"],
             workflow=workflow
-        )
+        ).split(';')
 
         print("Creating database in bulk...")
         print(wf_query)
         s_time = time.time()
-        self.graph.run(wf_query)
+        for q in wf_query:
+            self.graph.run(q)
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
@@ -166,6 +192,10 @@ class WorkflowGraphDatabase:
         )
 
         query = (
+            "CREATE INDEX ON :Tool(name);"
+            "CREATE INDEX ON :Datatype(name);"
+            "CREATE INDEX ON :EDAMFormat(id);"
+
             "LOAD CSV "
             "WITH HEADERS FROM 'file:///{fn}' AS source "
             "WITH source "
@@ -190,7 +220,7 @@ class WorkflowGraphDatabase:
                 '{0}_to_Datatype'.format(io_node)
             ],
             dtfmt_rel=self.components['Relationships']['Datatype_to_EDAMFormat']
-        )
+        ).split(';')
 
         return query
 
@@ -226,7 +256,8 @@ class WorkflowGraphDatabase:
 
         print("Creating database in bulk...")
         s_time = time.time()
-        self.graph.run(query)
+        for q in query:
+            self.graph.run(q)
         e_time = time.time()
         print("Time elapsed in creating database: %d seconds" % int(e_time - s_time))
 
@@ -268,10 +299,8 @@ if __name__ == "__main__":
     if create_db == "true":
         n = graph_db.graph.delete_all()
         assert n == None
-    graph_db.create_graph_bulk_merge(workflow_file)
     graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
     graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
-    graph_db.create_index(graph_db.components["Nodes"]["Tool"])
-    graph_db.create_index(graph_db.components["Nodes"]["Datatype"])
+    graph_db.create_graph_bulk_merge(workflow_file)
     # run queries against database
     graph_db.fetch_records()
