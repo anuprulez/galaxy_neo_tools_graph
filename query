@@ -1,4 +1,6 @@
-Query:
+/****** Queries ***********/
+
+Workflow connections:
 
 SELECT 
     workflow.id as wf_id,
@@ -16,7 +18,7 @@ FROM workflow_step_connection wfc
 LEFT JOIN workflow_step ws_in ON ws_in.id = wfc.output_step_id
 LEFT JOIN workflow_step_input wsi ON wfc.input_step_input_id = wsi.id
 LEFT JOIN workflow_step ws_out ON ws_out.id = wsi.workflow_step_id
-LEFT JOIN workflow_output as wo ON wo.workflow_step_id = wsi.workflow_step_id
+LEFT JOIN workflow_output as wo ON wo.workflow_step_id = wfc.output_step_id
 LEFT JOIN workflow on ws_in.workflow_id = workflow.id
 LEFT JOIN stored_workflow as sw on sw.latest_workflow_id = workflow.id
 WHERE workflow.id in (
@@ -25,6 +27,24 @@ WHERE workflow.id in (
     LEFT JOIN workflow on stored_workflow.latest_workflow_id = workflow.id
 )
 
-MATCH (t:Tool)<-[:IS_VERSION_OF]-(v:Version)-[:GENERATES_OUTPUT]->(o:ToolOutput)-[:HAS_DATATYPE]->(d:Datatype{name:"vcf"}) WITH t,v,o,d MATCH (v)-[:TAKES_INPUT]->(i:ToolInput)-[:HAS_DATATYPE]->(d2:Datatype{name:"bam"}) RETURN DISTINCT t,v,o,d,i,d2
 
 MATCH (a:Tool { name: "trimmomatic"}), (b:Tool { name: "bowtie2"}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p
+
+MATCH p = (a:Tool {name: "trimmomatic"}) - [r*..10] - (b:Tool {name: "bowtie2"}) RETURN p LIMIT 10
+
+MATCH p = (a:Tool {name: "bowtie2"}) - [r*..10] - (b:Datatype {name: "bam"}) RETURN DISTINCT p LIMIT 10
+
+MATCH p = (a:Tool {name: "trimmomatic"}) - [r*..6] - (b:Tool {name: "bowtie2"}) RETURN DISTINCT p LIMIT 10
+
+MATCH p=()-[r:IS_CONNECTED_BY]->() RETURN p LIMIT 25
+
+MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) RETURN a,v,o LIMIT 10
+
+MATCH p = (a:Tool {name: "trimmomatic"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool{name: "bowtie2"}) RETURN a,v,o,wc,i,iv,ot
+
+MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool{name: "featurecounts"}) RETURN a,v,o,wc,i,iv,ot
+
+MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(dt:Datatype) 
+WHERE v.name IN ["2.3.2.2","0.4"]
+RETURN a,v,o,dt
+LIMIT 100
