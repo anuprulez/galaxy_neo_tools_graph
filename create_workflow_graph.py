@@ -24,7 +24,8 @@ class WorkflowGraphDatabase:
                 'InTool': 'Tool',
                 'OutTool': 'Tool',
                 'InToolV': 'Version',
-                'OutToolV': 'Version'
+                'OutToolV': 'Version',
+                'ToolUsage': 'ToolUsage'
             },
             'Relationships': {
                 'Tool_to_Version': 'HAS_VERSION',
@@ -36,6 +37,7 @@ class WorkflowGraphDatabase:
                 'ToolOutput_to_Datatype': 'HAS_DATATYPE',
                 'ToolInput_to_Datatype': 'HAS_DATATYPE',
                 'Datatype_to_EDAMFormat': 'IS_OF_FORMAT',
+                'Version_to_Usage': 'USAGE'
             }
         }
 
@@ -151,12 +153,43 @@ class WorkflowGraphDatabase:
             workflow_rel=self.components["Relationships"]["Workflow"],
             workflow=workflow
         ).split(';')
+        
+        tool_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            'tool_id'
+        )
+        
+        version_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            'tool_v'
+        )
+        
+        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['ToolUsage'],
+            'usage'
+        )
+
+        usage_q = (
+            "LOAD CSV WITH HEADERS FROM 'file:///tools_usage_prediction.csv' AS tup "
+            "MERGE (tool: {tool_node_usage}) "
+            "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
+            "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage}) "
+        ).format(
+            tool_node_usage=tool_node_usage,
+            tv_rel=self.components['Relationships']['Tool_to_Version'],
+            ver_usage_rel=self.components['Relationships']['Version_to_Usage'],
+            version_node_usage=version_node_usage,
+            usage=tool_usage_node
+        )
 
         print("Creating database in bulk...")
         print(wf_query)
         s_time = time.time()
         for q in wf_query:
             self.graph.run(q)
+        print(usage_q)
+        self.graph.run(usage_q)
+        
         # drop index on Workflow nodes as it was added to speed up the database creation
         self.graph.schema.drop_index(self.components["Nodes"]["Workflow"], "id")
         e_time = time.time()
