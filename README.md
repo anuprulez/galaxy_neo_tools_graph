@@ -1,49 +1,119 @@
-# Graph database for Galaxy tools
+# A Graph database for Galaxy tools
 
-### Installation instructions:
+![](example_graph.png)
+
+## Setting up Neo4j
+
+General neo4j reference:
+
+https://neo4j.com/docs/developer-manual/3.2/introduction/
+
+### Fast way using docker
+
+1. `docker pull neo4j`
+
+2. Create folder structure for storing neo4j database content, import data, and logs **outside the docker container**:
+   ```
+   cd $HOME &&
+   mkdir neo4j neo4j/data neo4j/import neo4j/logs
+   ```
+
+3. Launch neo4j
+
+   The command below will
+   - make neo4j accessible via its http (port 7474) and bolt interfaces (port 7687)
+   - make it store database data and logs in mapped locations outside the container and
+   - look for import data in an external folder, too
+   - have it act on behalf of the current user (so that you have regular access rights to the data in the mapped locations)
+   
+   ```
+   sudo docker run \
+   --publish=7474:7474 --publish=7687:7687 \
+   --volume=$HOME/neo4j/data:/data --volume=$HOME/neo4j/import:/import --volume=$HOME/neo4j/logs:/logs \
+   --user=`id -u`:`id -g` neo4j
+   ```
+
+4. Check availability of the database server in your browser at
+   http://127.0.0.1:7474/browser/
+   
+Resources:
+- https://neo4j.com/docs/operations-manual/current/docker/
+- https://neo4j.com/developer/docker-run-neo4j/
+- https://neo4j.com/developer/docker/
+
+### Installation using OS package manager (Ubuntu):
+
+1. Install java and check version
+   - `sudo apt install default-jre`
+   - `java --version`
+
+2. Install Neo4j
+   - `wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -`
+   - `echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee -a /etc/apt/sources.list.d/neo4j.list`
+   - `sudo apt-get update`
+   - `sudo apt-get install neo4j=1:3.5.12`
+
+3. Minimal configuration of neo4j
+   - Uncomment the line `dbms.connectors.default_listen_address=0.0.0.0` in `/etc/neo4j/neo4j.conf`
+
+4. Starting/Stopping the Neo4j database service
+   - `sudo service neo4j start`
+   - `sudo service neo4j stop`
+   - `sudo service neo4j restart`
+
+Resources:
 - https://neo4j.com/docs/operations-manual/current/installation/linux/debian/#debian-installation
 - https://dzone.com/articles/installing-neo4j-on-ubuntu-1604
 
-### Desktop software:
-- https://neo4j.com/download-thanks-desktop/?edition=desktop&flavour=unix&release=1.2.1&offline=true
+### Use neo4j Desktop
 
-### Steps for installing Neo4j:
+https://neo4j.com/download/neo4j-desktop/?edition=desktop
 
-#### Install java
-1. ```sudo apt install default-jre```
 
-#### Check Java's version
-- ```java --version```
+## Installation of Python requirements
 
-#### Install Neo4j
-2. ```wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -```
-3. ```echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee -a /etc/apt/sources.list.d/neo4j.list```
-4. ```sudo apt-get update```
-5. ```sudo apt-get install neo4j=1:3.5.12```
+### Using Python3 venv
+1. `python3 -m venv graph_db`
+2. `. graph_db/bin/activate`
+3. `pip install py2neo requests`
 
-#### Uncomment the line "dbms.connectors.default_listen_address=0.0.0.0" present at "/etc/neo4j/neo4j.conf"
+### Using conda
+1. `conda create --name graph_db python=3.6`
+2. `pip install py2neo`
+3. `conda install requests`
 
-#### Start/Stop the Neo4j service
-- ```sudo service neo4j start```
-- ```sudo service neo4j stop```
-- ```sudo service neo4j restart```
+## Building the graph database
 
-#### Open in browser:
-- http://127.0.0.1:7474/browser/
+### Copy data files to neo4j import directory
+- For a OS package manager installed neo4j:
+   
+  `sudo cp data/* /var/lib/neo4j/import/`
+      
+- For neo4j running in docker:
+   
+  `cp data/* $HOME/neo4j/import`
 
-#### Install requirements
-- ```conda create --name graph_db python=3.6```
-- ```pip install neo4j``` (optional)
-- ```pip install py2neo```
-- ```conda install requests```
+### First connection to the database server
+1. Visit http://127.0.0.1:7474/browser/ in your browser and log in with the default credentials:
+   ```
+   username: neo4j
+   password: neo4j
+   ```
+     
+2. Set a new password upon being prompted to do so
+   
+### Import the data
+Find the file `run_create_db.sh` inside the cloned repo folder, and:
 
-#### Copy data file
--  ```sudo cp <csv file path> /var/lib/neo4j/import/```
+1. Edit it to use
+   - the password you set for your database account
+   - the paths to the CSV data files in the neo4j import directory (see above)
+   
+2. From inside the cloned repo folder run:
+   
+   `sh run_create_db.sh`
 
-#### More details:
-- https://dzone.com/articles/installing-neo4j-on-ubuntu-1604
-- https://medium.com/@Jessicawlm/installing-neo4j-on-ubuntu-14-04-step-by-step-guide-ed943ec16c56
-- https://datawookie.netlify.com/blog/2016/09/installing-neo4j-on-ubuntu-16.04/
+Building the database should take < 1 minute with an OS package manager-installed neo4j
+(expect 1-5 minutes with the less performant docker version).
 
-#### Reading manual:
-- https://neo4j.com/docs/developer-manual/3.2/introduction/
+After that go back to the neo4j web interface and **start exploring**!
