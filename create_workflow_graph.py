@@ -119,7 +119,7 @@ class WorkflowGraphDatabase:
             'tool_v'
         )
         
-        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
+        tool_usage_node = '{0}{{usage:tup.{1}, name:tup.{1}}}'.format(
             self.components['Nodes']['ToolUsage'],
             'usage'
         )
@@ -155,6 +155,7 @@ class WorkflowGraphDatabase:
             "MERGE (tool: {tool_node_usage}) "
             "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
             "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage})"
+            
         ).format(
             wf_file_name=os.path.basename(wf_file_path),
             tool_usage_file_name=os.path.basename(tool_usage_file_path),
