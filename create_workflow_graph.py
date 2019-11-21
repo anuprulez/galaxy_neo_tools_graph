@@ -41,7 +41,7 @@ class WorkflowGraphDatabase:
             }
         }
 
-    def create_graph_bulk_merge(self, wf_file_path, wf_ids_file_path):
+    def create_graph_bulk_merge(self, wf_file_path, tool_usage_file_path):
         """
         Create graph database with bulk import
         """
@@ -108,11 +108,26 @@ class WorkflowGraphDatabase:
             self.components["Nodes"]["Workflow"],
             wf_column_map['WfId']
         )
+        
+        tool_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            'tool_id'
+        )
+        
+        version_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            'tool_v'
+        )
+        
+        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['ToolUsage'],
+            'usage'
+        )
 
         wf_query = (
             "CREATE INDEX ON :Workflow(id);"
 
-            "LOAD CSV WITH HEADERS FROM 'file:///{wf_ids_file_name}' AS tc "
+            "LOAD CSV WITH HEADERS FROM 'file:///wf_ids.csv' AS tc "
             "MERGE (:{workflow});"
 
             "LOAD CSV WITH HEADERS FROM 'file:///{wf_file_name}' AS tc "
@@ -134,10 +149,15 @@ class WorkflowGraphDatabase:
             "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in) "
             "WITH tc, wf_conn "
             "MATCH (wf:{workflow}) "
-            "MERGE (wf_conn) -[:{workflow_rel}] ->(wf)"
+            "MERGE (wf_conn) -[:{workflow_rel}] ->(wf);"
+            
+            "LOAD CSV WITH HEADERS FROM 'file:///{tool_usage_file_name}' AS tup "
+            "MERGE (tool: {tool_node_usage}) "
+            "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
+            "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage})"
         ).format(
             wf_file_name=os.path.basename(wf_file_path),
-            wf_ids_file_name=os.path.basename(wf_ids_file_path),
+            tool_usage_file_name=os.path.basename(tool_usage_file_path),
             in_tool=in_tool,
             tv_rel=self.components['Relationships']['Tool_to_Version'],
             in_version=in_version,
@@ -151,45 +171,19 @@ class WorkflowGraphDatabase:
             wf_conn=self.components["Nodes"]["WorkflowConnection"],
             conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"],
             workflow_rel=self.components["Relationships"]["Workflow"],
-            workflow=workflow
-        ).split(';')
-        
-        tool_node_usage = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['Tool'],
-            'tool_id'
-        )
-        
-        version_node_usage = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['Version'],
-            'tool_v'
-        )
-        
-        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['ToolUsage'],
-            'usage'
-        )
-
-        usage_q = (
-            "LOAD CSV WITH HEADERS FROM 'file:///tools_usage_prediction.csv' AS tup "
-            "MERGE (tool: {tool_node_usage}) "
-            "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
-            "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage}) "
-        ).format(
+            workflow=workflow,
             tool_node_usage=tool_node_usage,
-            tv_rel=self.components['Relationships']['Tool_to_Version'],
             ver_usage_rel=self.components['Relationships']['Version_to_Usage'],
             version_node_usage=version_node_usage,
             usage=tool_usage_node
-        )
+        ).split(';')
 
         print("Creating database in bulk...")
         print(wf_query)
         s_time = time.time()
         for q in wf_query:
             self.graph.run(q)
-        print(usage_q)
-        self.graph.run(usage_q)
-        
+
         # drop index on Workflow nodes as it was added to speed up the database creation
         self.graph.schema.drop_index(self.components["Nodes"]["Workflow"], "id")
         e_time = time.time()
@@ -318,7 +312,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-ti", "--tool_inputs_file", required=True, help="Tool inputs file")
     arg_parser.add_argument("-to", "--tool_outputs_file", required=True, help="Tool outputs file")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
-    arg_parser.add_argument("-wif", "--workflow_ids_file", required=True, help="Workflow ids file")
+    arg_parser.add_argument("-tuf", "--tool_usage_file", required=True, help="Tool usage file")
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
@@ -327,7 +321,7 @@ if __name__ == "__main__":
     t_inputs_file = args["tool_inputs_file"]
     t_output_file = args["tool_outputs_file"]
     workflow_file = args["workflow_file"]
-    workflow_ids_file = args["workflow_ids_file"]
+    tool_usage_file = args["tool_usage_file"]
     # connect to neo4j database
     graph_db = WorkflowGraphDatabase(url, username, password)
     # create a database after deleting the existing records
@@ -336,6 +330,6 @@ if __name__ == "__main__":
         assert n == None
     graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
     graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
-    graph_db.create_graph_bulk_merge(workflow_file, workflow_ids_file)
+    graph_db.create_graph_bulk_merge(workflow_file, tool_usage_file)
     # run queries against database
     graph_db.fetch_records()
