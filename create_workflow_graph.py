@@ -41,7 +41,7 @@ class WorkflowGraphDatabase:
             }
         }
 
-    def create_graph_bulk_merge(self, wf_file_path, wf_ids_file_path):
+    def create_graph_bulk_merge(self, wf_file_path, tool_usage_file_path):
         """
         Create graph database with bulk import
         """
@@ -127,7 +127,7 @@ class WorkflowGraphDatabase:
         wf_query = (
             "CREATE INDEX ON :Workflow(id);"
 
-            "LOAD CSV WITH HEADERS FROM 'file:///{wf_ids_file_name}' AS tc "
+            "LOAD CSV WITH HEADERS FROM 'file:///wf_ids.csv' AS tc "
             "MERGE (:{workflow});"
 
             "LOAD CSV WITH HEADERS FROM 'file:///{wf_file_name}' AS tc "
@@ -151,13 +151,13 @@ class WorkflowGraphDatabase:
             "MATCH (wf:{workflow}) "
             "MERGE (wf_conn) -[:{workflow_rel}] ->(wf);"
             
-            "LOAD CSV WITH HEADERS FROM 'file:///tools_usage_prediction.csv' AS tup "
+            "LOAD CSV WITH HEADERS FROM 'file:///{tool_usage_file_name}' AS tup "
             "MERGE (tool: {tool_node_usage}) "
             "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
             "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage})"
         ).format(
             wf_file_name=os.path.basename(wf_file_path),
-            wf_ids_file_name=os.path.basename(wf_ids_file_path),
+            tool_usage_file_name=os.path.basename(tool_usage_file_path),
             in_tool=in_tool,
             tv_rel=self.components['Relationships']['Tool_to_Version'],
             in_version=in_version,
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-ti", "--tool_inputs_file", required=True, help="Tool inputs file")
     arg_parser.add_argument("-to", "--tool_outputs_file", required=True, help="Tool outputs file")
     arg_parser.add_argument("-wf", "--workflow_file", required=True, help="Workflow file")
-    arg_parser.add_argument("-wif", "--workflow_ids_file", required=True, help="Workflow ids file")
+    arg_parser.add_argument("-tuf", "--tool_usage_file", required=True, help="Tool usage file")
     args = vars(arg_parser.parse_args())
     url = args["url"]
     username = args["user_name"]
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     t_inputs_file = args["tool_inputs_file"]
     t_output_file = args["tool_outputs_file"]
     workflow_file = args["workflow_file"]
-    workflow_ids_file = args["workflow_ids_file"]
+    tool_usage_file = args["tool_usage_file"]
     # connect to neo4j database
     graph_db = WorkflowGraphDatabase(url, username, password)
     # create a database after deleting the existing records
@@ -330,6 +330,6 @@ if __name__ == "__main__":
         assert n == None
     graph_db.load_io_data_from_csv(t_output_file, "ToolOutput")
     graph_db.load_io_data_from_csv(t_inputs_file, "ToolInput")
-    graph_db.create_graph_bulk_merge(workflow_file, workflow_ids_file)
+    graph_db.create_graph_bulk_merge(workflow_file, tool_usage_file)
     # run queries against database
     graph_db.fetch_records()
