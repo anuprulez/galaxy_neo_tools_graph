@@ -61,3 +61,13 @@ MATCH p = (a:Tool {name: "freebayes"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATE
 
 
 MATCH p = (a:Tool {name: "bowtie2"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype) WITH a,v,o,od MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version) <-[:HAS_VERSION] -(ot:Tool) RETURN a,v,o,od,wc,i,iv,ot LIMIT 20
+
+MATCH (a:Tool {name: "trimmomatic"}) -[:HAS_VERSION] ->(v:Version) -[:GENERATES_OUTPUT] ->(o:ToolOutput) -[:HAS_DATATYPE] ->(od:Datatype)
+WITH a,v,o,od 
+MATCH (o) -[:IS_CONNECTED_BY] ->(wc:WorkflowConnection) -[:TO_INPUT] ->(i:ToolInput) -[:FEEDS_INTO] ->(iv:Version)
+WITH a,v,o,od,wc,i,iv
+MATCH (iv) -[:USAGE] ->(tu:ToolUsage)
+MATCH (tu)
+WHERE toFloat(tu.usage) > 1000
+RETURN a,v,o,od,wc,i,iv,tu
+LIMIT 10
