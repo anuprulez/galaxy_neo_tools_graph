@@ -108,6 +108,21 @@ class WorkflowGraphDatabase:
             self.components["Nodes"]["Workflow"],
             wf_column_map['WfId']
         )
+        
+        tool_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Tool'],
+            'tool_id'
+        )
+        
+        version_node_usage = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['Version'],
+            'tool_v'
+        )
+        
+        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
+            self.components['Nodes']['ToolUsage'],
+            'usage'
+        )
 
         wf_query = (
             "CREATE INDEX ON :Workflow(id);"
@@ -134,7 +149,12 @@ class WorkflowGraphDatabase:
             "MERGE (d_out)-[:{conn_out}]->(wf_conn:{wf_conn}{{}})-[:{conn_in}]->(d_in) "
             "WITH tc, wf_conn "
             "MATCH (wf:{workflow}) "
-            "MERGE (wf_conn) -[:{workflow_rel}] ->(wf)"
+            "MERGE (wf_conn) -[:{workflow_rel}] ->(wf);"
+            
+            "LOAD CSV WITH HEADERS FROM 'file:///tools_usage_prediction.csv' AS tup "
+            "MERGE (tool: {tool_node_usage}) "
+            "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
+            "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage})"
         ).format(
             wf_file_name=os.path.basename(wf_file_path),
             wf_ids_file_name=os.path.basename(wf_ids_file_path),
@@ -151,45 +171,19 @@ class WorkflowGraphDatabase:
             wf_conn=self.components["Nodes"]["WorkflowConnection"],
             conn_in=self.components["Relationships"]["WorkflowConnection_to_ToolInput"],
             workflow_rel=self.components["Relationships"]["Workflow"],
-            workflow=workflow
-        ).split(';')
-        
-        tool_node_usage = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['Tool'],
-            'tool_id'
-        )
-        
-        version_node_usage = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['Version'],
-            'tool_v'
-        )
-        
-        tool_usage_node = '{0}{{name:tup.{1}}}'.format(
-            self.components['Nodes']['ToolUsage'],
-            'usage'
-        )
-
-        usage_q = (
-            "LOAD CSV WITH HEADERS FROM 'file:///tools_usage_prediction.csv' AS tup "
-            "MERGE (tool: {tool_node_usage}) "
-            "MERGE (tool)-[:{tv_rel}] ->(version: {version_node_usage}) "
-            "MERGE (version) -[:{ver_usage_rel}] ->(tu: {usage}) "
-        ).format(
+            workflow=workflow,
             tool_node_usage=tool_node_usage,
-            tv_rel=self.components['Relationships']['Tool_to_Version'],
             ver_usage_rel=self.components['Relationships']['Version_to_Usage'],
             version_node_usage=version_node_usage,
             usage=tool_usage_node
-        )
+        ).split(';')
 
         print("Creating database in bulk...")
         print(wf_query)
         s_time = time.time()
         for q in wf_query:
             self.graph.run(q)
-        print(usage_q)
-        self.graph.run(usage_q)
-        
+
         # drop index on Workflow nodes as it was added to speed up the database creation
         self.graph.schema.drop_index(self.components["Nodes"]["Workflow"], "id")
         e_time = time.time()
