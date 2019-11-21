@@ -1,1 +1,1 @@
-python create_workflow_graph.py -url "bolt://127.0.0.1:7687" -un "neo4j" -pass "password" -cd true -ti "data/tool_iformats.csv" -to "data/tool_oformats.csv" -wf "data/workflow_connections.csv"
+python create_workflow_graph.py -url "bolt://127.0.0.1:7687" -un "neo4j" -pass "password" -cd true -ti "data/tool_iformats.csv" -to "data/tool_oformats.csv" -wf "data/workflow_connections.csv" -wif "data/wf_ids.csv"
