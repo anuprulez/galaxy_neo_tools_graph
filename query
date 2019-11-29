@@ -12,13 +12,13 @@ SELECT
     ws_out.tool_id as out_tool,
     ws_out.tool_version as out_tool_v,
     wsi.name as tool_inputs,
-    wo.output_name as tool_outputs,
+    wfc.output_name as tool_outputs,
     sw.published as published
 FROM workflow_step_connection wfc
 LEFT JOIN workflow_step ws_in ON ws_in.id = wfc.output_step_id
 LEFT JOIN workflow_step_input wsi ON wfc.input_step_input_id = wsi.id
 LEFT JOIN workflow_step ws_out ON ws_out.id = wsi.workflow_step_id
-LEFT JOIN workflow_output as wo ON wo.workflow_step_id = wfc.output_step_id
+LEFT JOIN workflow_output as wo ON wsi.workflow_step_id = wfc.output_step_id
 LEFT JOIN workflow on ws_in.workflow_id = workflow.id
 LEFT JOIN stored_workflow as sw on sw.latest_workflow_id = workflow.id
 WHERE workflow.id in (
@@ -26,6 +26,7 @@ WHERE workflow.id in (
     FROM stored_workflow
     LEFT JOIN workflow on stored_workflow.latest_workflow_id = workflow.id
 )
+
 
 
 MATCH (a:Tool { name: "trimmomatic"}), (b:Tool { name: "bowtie2"}), p = shortestPath((a)-[*]-(b)) WHERE length(p) > 1 RETURN p
